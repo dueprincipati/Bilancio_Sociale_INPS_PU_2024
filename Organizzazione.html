@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizzazione e Risorse Umane - Pesaro e Urbino</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Configurazione Tailwind per il tema
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'accent': {
+                            '400': '#4ade80', // Verde accento
+                            '500': '#22c55e',
+                            '600': '#16a34a'
+                        },
+                        slate: {
+                            800: '#1e293b',
+                            900: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        .chart-container {
+            position: relative;
+            height: 45vh; /* Aumentato leggermente per leggibilità */
+            width: 100%;
+        }
+
+        /* ----- STILI TAB L1 (Principali) ----- */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .tab-btn {
+            position: relative;
+            color: #94a3b8; /* slate-400 */
+            transition: color 0.2s ease-in-out;
+            padding-bottom: 8px;
+            font-weight: 500;
+        }
+        .tab-btn:hover { color: #f8fafc; } /* slate-50 */
+        .tab-btn.active {
+            color: #4ade80; /* accent-400 */
+            font-weight: 600;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background-color: #4ade80; /* accent-400 */
+            border-radius: 2px;
+        }
+
+        /* ----- STILI TAB L2 (Approfondimenti) ----- */
+        .l2-tab-content { display: none; }
+        .l2-tab-content.active { display: block; }
+
+        .l2-tab-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 9999px; /* rounded-full */
+            background-color: #334155; /* slate-700 */
+            color: #cbd5e1; /* slate-300 */
+            transition: all 0.2s ease-in-out;
+            border: 2px solid transparent;
+        }
+        .l2-tab-btn:hover {
+            background-color: #475569; /* slate-600 */
+            color: #f8fafc; /* slate-50 */
+        }
+        .l2-tab-btn.active {
+            background-color: #16a34a; /* accent-600 */
+            color: #ffffff;
+            font-weight: 600;
+            border-color: #4ade80; /* accent-400 */
+        }
+
+        /* ----- CARD E MODALE ----- */
+        .card {
+            background-color: #1e293b; /* slate-800 */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #334155; /* slate-700 */
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .zoomable { cursor: zoom-in; }
+        
+        #modal-overlay { 
+            transition: opacity 0.3s ease-in-out; 
+            backdrop-filter: blur(4px);
+        }
+        
+        .card.zoomed {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 90vw;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+
+        /* ----- STILI LINK APPROFONDIMENTO ----- */
+        .deep-dive-link {
+            color: #4ade80; /* accent-400 */
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .deep-dive-link:hover {
+            color: #22c55e; /* accent-500 */
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+    <!-- Overlay per modale zoom -->
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50"></div>
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white">Organizzazione e Risorse Umane</h1>
+            <p class="text-lg text-slate-400 mt-1">Provincia di Pesaro e Urbino (Dati 2024)</p>
+        </header>
+
+        <!-- Schede KPI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card"> <!-- Non-zoomable KPI -->
+                <h3 class="text-slate-400 font-semibold text-md">Personale Totale</h3>
+                <p class="text-4xl font-bold text-white mt-2">127</p>
+                <p class="text-sm text-slate-500 mt-1">Dato aggiornato al 2024</p>
+            </div>
+            <div class="card"> <!-- Non-zoomable KPI -->
+                <h3 class="text-slate-400 font-semibold text-md">Età Media Personale</h3>
+                <p class="text-4xl font-bold text-accent-400 mt-2">53,1</p>
+                <p class="text-sm text-slate-500 mt-1">In calo costante dal 2019</p>
+            </div>
+            <div class="card"> <!-- Non-zoomable KPI -->
+                <h3 class="text-slate-400 font-semibold text-md">Prevalenza Femminile</h3>
+                <p class="text-4xl font-bold text-pink-400 mt-2">65,4%</p>
+                <p class="text-sm text-slate-500 mt-1">83 su 127 dipendenti</p>
+            </div>
+             <div class="card"> <!-- Non-zoomable KPI -->
+                <h3 class="text-slate-400 font-semibold text-md">Presenza sul Territorio</h3>
+                <p class="text-4xl font-bold text-white mt-2">97</p>
+                <p class="text-sm text-slate-500 mt-1">Strutture, Punti Servizio e Partner</p>
+            </div>
+        </div>
+
+        <!-- Tab Buttons L1 -->
+        <div id="tabs" class="flex flex-wrap justify-center gap-8 mb-6 border-b border-slate-700">
+            <button class="tab-btn active" data-tab="risorse">Risorse Umane</button>
+            <button class="tab-btn" data-tab="territorio">Presenza Territoriale</button>
+        </div>
+
+        <!-- Tab Content L1 -->
+        <div id="tab-contents" class="mt-8">
+            
+            <!-- ================================== -->
+            <!--        TAB L1: RISORSE UMANE       -->
+            <!-- ================================== -->
+            <div id="risorse" class="tab-content active space-y-6">
+                
+                <!-- Tab Buttons L2 - Risorse -->
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button class="l2-tab-btn active" data-tab="l2-risorse-overview">Panoramica</button>
+                    <button class="l2-tab-btn" data-tab="l2-risorse-genere-dettaglio">Approfondimento: Dettaglio Generi</button>
+                    <button class="l2-tab-btn" data-tab="l2-risorse-trend-aree">Approfondimento: Andamento Aree</button>
+                    <button class="l2-tab-btn" data-tab="l2-risorse-benchmark-eta">Approfondimento: Benchmark Età</button>
+                </div>
+
+                <!-- Contenuti Tab L2 - Risorse -->
+                <div id="l2-risorse-contents">
+                    
+                    <!-- L2: Panoramica (Grafici L1 Esistenti) -->
+                    <div id="l2-risorse-overview" class="l2-tab-content active space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Personale per Genere e Macro-Area (2024)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>La componente <strong class="text-pink-400">femminile</strong> è maggioritaria (65,4%) e prevale nettamente nelle aree professionali e tra medici/professionisti.</li>
+                                <li>L'unica figura dirigenziale presente è di genere <strong class="text-sky-400">maschile</strong>.</li>
+                                <li><a class="deep-dive-link" data-target-l1="risorse" data-target-l2="l2-risorse-genere-dettaglio">Vedi il dettaglio delle professioni.</a></li>
+                            </ul>
+                            <div class="chart-container" style="height: 50vh;"><canvas id="personnelByAreaChart"></canvas></div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-slate-200 mb-4">Andamento Totale Personale (2019-2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                   <li>Dopo un calo tra il 2020 e il 2022, l'organico ha visto un recupero nel 2023, per poi assestarsi a <strong class="text-slate-100">127 unità</strong> nel 2024.</li>
+                                   <li><a class="deep-dive-link" data-target-l1="risorse" data-target-l2="l2-risorse-trend-aree">Vedi l'andamento per singole aree.</a></li>
+                                </ul>
+                                <div class="chart-container"><canvas id="personnelTrendChart"></canvas></div>
+                            </div>
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-slate-200 mb-4">Andamento Età Media del Personale</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>L'età media è in <strong class="text-accent-400">costante e significativa diminuzione</strong> dal 2019 (da 58,4 a 53,1 anni).</li>
+                                    <li>Il dato provinciale (53,1) è migliore della media regionale (53,6) ma superiore a quella nazionale (51,3).</li>
+                                    <li><a class="deep-dive-link" data-target-l1="risorse" data-target-l2="l2-risorse-benchmark-eta">Vedi il confronto con le altre province.</a></li>
+                                </ul>
+                                <div class="chart-container"><canvas id="averageAgeChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- L2: Approfondimento Dettaglio Generi -->
+                    <div id="l2-risorse-genere-dettaglio" class="l2-tab-content space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-accent-400 mb-4">Approfondimento: Dettaglio Professioni per Genere (2024)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Questo grafico scompone la macro-area "Medici e Professionisti".</li>
+                                <li>L'area medica (3 unità) è interamente composta da <strong class="text-pink-400">personale femminile</strong>.</li>
+                                <li>L'area legale (1 unità) è rappresentata da <strong class="text-sky-400">personale maschile</strong>.</li>
+                                <li>L'area Tecnica Edilizia non ha personale assegnato nella provincia.</li>
+                            </ul>
+                            <div class="chart-container"><canvas id="personnelDetailChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- L2: Approfondimento Andamento Aree -->
+                    <div id="l2-risorse-trend-aree" class="l2-tab-content space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-accent-400 mb-4">Approfondimento: Andamento Personale per Aree (2019-2024)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Il calo e recupero dell'organico totale è quasi interamente dovuto alla fluttuazione del <strong class="text-teal-400">personale delle aree professionali</strong>.</li>
+                                <li>Le aree <strong class="text-purple-400">Dirigenti</strong> e <strong class="text-orange-400">Medici/Professionisti</strong> sono rimaste numericamente stabili o in lieve crescita negli ultimi anni.</li>
+                            </ul>
+                            <div class="chart-container"><canvas id="personnelAreaTrendChart"></canvas></div>
+                        </div>
+                    </div>
+                    
+                    <!-- L2: Approfondimento Benchmark Età -->
+                    <div id="l2-risorse-benchmark-eta" class="l2-tab-content space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-accent-400 mb-4">Approfondimento: Benchmark Età Media Provinciale (2024)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Con <strong class="text-accent-400">53,1 anni</strong>, Pesaro e Urbino si posiziona a metà classifica regionale.</li>
+                                <li>La provincia di <strong class="text-sky-400">Fermo</strong> ha l'età media più bassa (49,3 anni), significativamente al di sotto della media nazionale.</li>
+                                <li><strong class="text-pink-400">Ascoli Piceno</strong> registra l'età media più elevata (56,1 anni).</li>
+                            </ul>
+                            <div class="chart-container"><canvas id="averageAgeBenchmarkChart"></canvas></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ================================== -->
+            <!--     TAB L1: PRESENZA TERRITORIALE    -->
+            <!-- ================================== -->
+            <div id="territorio" class="tab-content space-y-6">
+                
+                <!-- Tab Buttons L2 - Territorio -->
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button class="l2-tab-btn active" data-tab="l2-territorio-overview">Panoramica</button>
+                    <button class="l2-tab-btn" data-tab="l2-territorio-benchmark">Approfondimento: Benchmark Territoriale</button>
+                </div>
+
+                <!-- Contenuti Tab L2 - Territorio -->
+                <div id="l2-territorio-contents">
+
+                    <!-- L2: Panoramica (Grafici L1 Esistenti) -->
+                    <div id="l2-territorio-overview" class="l2-tab-content active space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Distribuzione Punti di Servizio sul Territorio (2024)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>La rete di servizi provinciale è capillare grazie ai partner: i <strong class="text-sky-400">Patronati</strong> (68) costituiscono il 70% dei punti di contatto.</li>
+                                <li>Seguono i <strong class="text-teal-400">CAF</strong> (23) e le <strong class="text-purple-400">Strutture INPS</strong> dirette (4) e i <strong class="text-orange-400">Punti Cliente</strong> (2).</li>
+                                <li><a class="deep-dive-link" data-target-l1="territorio" data-target-l2="l2-territorio-benchmark">Vedi il confronto con le altre province.</a></li>
+                            </ul>
+                            <div class="chart-container" style="height:50vh"><canvas id="territoryDistributionChart"></canvas></div>
+                        </div>
+                        <div class="card">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Legenda Strutture</h3>
+                            <dl class="text-slate-400 space-y-3">
+                                <div>
+                                    <dt class="font-semibold text-slate-200">Strutture INPS</dt>
+                                    <dd class="text-sm">Direzioni Provinciali, Agenzie, Filiali, ecc.</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-semibold text-slate-200">Punti Cliente di Servizio</dt>
+                                    <dd class="text-sm">Sportelli telematici presso Enti locali e altre P.A. senza personale INPS in loco.</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-semibold text-slate-200">Partner</dt>
+                                    <dd class="text-sm">Include Patronati e CAF convenzionati.</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- L2: Approfondimento Benchmark Territoriale -->
+                    <div id="l2-territorio-benchmark" class="l2-tab-content space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-accent-400 mb-4">Approfondimento: Composizione Rete Territoriale (Benchmark)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Questo grafico mostra la composizione percentuale (%) della rete di servizi in ogni provincia.</li>
+                                <li><strong class="text-accent-400">Pesaro e Urbino</strong> ha una dipendenza dai <strong class="text-sky-400">Patronati</strong> (70%) simile a Macerata (68%), ma superiore alla media regionale.</li>
+                                <li><strong class="text-pink-400">Ancona</strong> mostra la composizione più equilibrata tra Patronati (69%) e <strong class="text-teal-400">CAF</strong> (22%).</li>
+                                <li>Le <strong class="text-purple-400">Strutture INPS</strong> dirette sono una minima parte della rete in tutte le province, evidenziando il modello di servizio basato sui partner.</li>
+                            </ul>
+                            <div class="chart-container"><canvas id="territoryBenchmarkChart"></canvas></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chartInstances = new Map();
+        // Palette colori per i dati
+        const colors = { 
+            orange: '#fb923c', // Arancione
+            sky: '#38bdf8',    // Azzurro
+            teal: '#2dd4bf',   // Verde Acqua
+            pink: '#f472b6',    // Rosa
+            red: '#f87171',     // Rosso
+            purple: '#c084fc', // Viola
+            green: '#4ade80'   // Verde Accento
+        };
+
+        // --- GESTIONE TAB L1 (Principali) ---
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // --- GESTIONE TAB L2 (Approfondimenti) ---
+        function setupL2Tabs(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const l2Tabs = container.querySelectorAll('.l2-tab-btn');
+            const l2Contents = container.querySelectorAll('.l2-tab-content');
+            
+            l2Tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    l2Tabs.forEach(t => t.classList.remove('active'));
+                    l2Contents.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    const contentId = tab.dataset.tab;
+                    container.querySelector(`#${contentId}`).classList.add('active');
+                });
+            });
+        }
+        setupL2Tabs('risorse');
+        setupL2Tabs('territorio');
+
+        // --- GESTIONE DEEP DIVE LINKS ---
+        document.body.addEventListener('click', function(e) {
+            if (e.target.classList.contains('deep-dive-link')) {
+                e.preventDefault();
+                const targetL1 = e.target.dataset.targetL1; // e.g., 'risorse'
+                const targetL2 = e.target.dataset.targetL2; // e.g., 'l2-risorse-trend-aree'
+                
+                // 1. Switch L1 tab
+                const l1TabButton = document.querySelector(`.tab-btn[data-tab='${targetL1}']`);
+                if (l1TabButton && !l1TabButton.classList.contains('active')) {
+                    l1TabButton.click();
+                }
+                
+                // 2. Switch L2 tab
+                // Usiamo setTimeout 0 per assicurarci che il click avvenga dopo il re-render del DOM (se L1 era nascosto)
+                setTimeout(() => {
+                    const l1Content = document.getElementById(targetL1);
+                    const l2TabButton = l1Content.querySelector(`.l2-tab-btn[data-tab='${targetL2}']`);
+                    if (l2TabButton && !l2TabButton.classList.contains('active')) {
+                        l2TabButton.click();
+                    }
+                    // Scroll al grafico
+                    l2TabButton?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 0);
+            }
+        });
+
+
+        // --- GESTIONE ZOOM MODALE ---
+        const overlay = document.getElementById('modal-overlay');
+        function unzoom() {
+            document.querySelector('.card.zoomed')?.classList.remove('zoomed');
+            overlay.classList.add('hidden');
+        }
+        document.querySelectorAll('.zoomable').forEach(card => {
+            card.addEventListener('click', (event) => {
+                // Non attivare lo zoom se si clicca su un link, un bottone o la canvas (per tooltip)
+                if (event.target.closest('a, button, canvas, .l2-tab-btn')) return;
+                
+                const isZoomed = card.classList.contains('zoomed');
+                unzoom(); // Chiudi eventuali altri zoom
+                if (!isZoomed) {
+                    card.classList.add('zoomed');
+                    overlay.classList.remove('hidden');
+                }
+            });
+        });
+        overlay.addEventListener('click', unzoom);
+
+        // --- CONFIGURAZIONE GRAFICI ---
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#94a3b8'; // Colore base testo grafici
+        const commonOptions = { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { position: 'bottom', labels: { color: '#cbd5e1' } } 
+            }, 
+            scales: { 
+                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }, 
+                x: { grid: { display: false }, ticks: { color: '#94a3b8' } } 
+            } 
+        };
+        const commonBarOptions = { ...commonOptions, scales: { x: { grid: { display: false }, ticks: { color: '#94a3b8' } }, y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } } } };
+
+        function createChart(canvasId, config) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            // Distruggi vecchio grafico se esiste
+            if (chartInstances.has(canvasId)) {
+                chartInstances.get(canvasId).destroy();
+            }
+            const chart = new Chart(ctx, config);
+            chartInstances.set(canvasId, chart);
+            return chart;
+        }
+
+        // --- GRAFICI L1 (PANORAMICA) ---
+        createChart('personnelByAreaChart', {
+            type: 'bar',
+            data: {
+                labels: ['Aree Professionali', 'Medici e Professionisti', 'Dirigenti'],
+                datasets: [
+                    { label: 'Femmine', data: [80, 3, 0], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [42, 1, 1], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: { ...commonBarOptions, indexAxis: 'y', scales: { x: { stacked: true, grid: { color: 'rgba(255, 255, 255, 0.1)' } }, y: { stacked: true, grid: { display: false } } } }
+        });
+        
+        createChart('personnelTrendChart', {
+            type: 'line',
+            data: {
+                labels: ['2019', '2020', '2021', '2022', '2023', '2024'],
+                datasets: [{ 
+                    label: 'Totale Personale', 
+                    data: [144, 140, 121, 115, 133, 127], 
+                    borderColor: colors.teal, 
+                    backgroundColor: colors.teal + '33', // Leggero fill
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: { ...commonOptions, plugins: { legend: { display: false } } }
+        });
+        
+        createChart('averageAgeChart', {
+            type: 'line',
+            data: {
+                labels: ['2019', '2020', '2021', '2022', '2023', '2024'],
+                datasets: [
+                    { label: 'Pesaro e Urbino', data: [58.4, 58.3, 57.6, 56.0, 53.4, 53.1], borderColor: colors.green, tension: 0.3, borderWidth: 3 },
+                    { label: 'Regione Marche', data: [59.7, 59.2, 58.5, 57.6, 54.2, 53.6], borderColor: colors.sky, borderDash: [5, 5], tension: 0.3 },
+                    { label: 'Italia', data: [58.1, 57.3, 56.6, 55.5, 52.0, 51.3], borderColor: colors.purple, borderDash: [5, 5], tension: 0.3 }
+                ]
+            },
+            options: commonOptions
+        });
+
+        createChart('territoryDistributionChart', {
+            type: 'doughnut',
+            data: {
+                labels: ['Patronati', 'CAF', 'Strutture INPS', 'Punti Cliente di Servizio'],
+                datasets: [{
+                    data: [68, 23, 4, 2],
+                    backgroundColor: [colors.sky, colors.teal, colors.purple, colors.orange],
+                    borderColor: '#1e293b' // Colore card
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }
+        });
+
+        // --- GRAFICI L2 (APPROFONDIMENTI) ---
+
+        // L2 - Risorse: Dettaglio Generi
+        createChart('personnelDetailChart', {
+            type: 'bar',
+            data: {
+                labels: ['Medico', 'Legale', 'Tecnico Edilizio'],
+                datasets: [
+                    { label: 'Femmine', data: [3, 0, 0], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [0, 1, 0], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: { ...commonBarOptions, indexAxis: 'y', scales: { x: { stacked: true, grid: { color: 'rgba(255, 255, 255, 0.1)' } }, y: { stacked: true, grid: { display: false } } } }
+        });
+
+        // L2 - Risorse: Andamento Aree
+        createChart('personnelAreaTrendChart', {
+            type: 'line',
+            data: {
+                labels: ['2019', '2020', '2021', '2022', '2023', '2024'],
+                datasets: [
+                    { label: 'Aree Professionali', data: [139, 137, 118, 112, 128, 122], borderColor: colors.teal, tension: 0.3 },
+                    { label: 'Medici e Professionisti', data: [3, 2, 2, 2, 4, 4], borderColor: colors.orange, tension: 0.3 },
+                    { label: 'Dirigenti', data: [2, 1, 1, 1, 1, 1], borderColor: colors.purple, tension: 0.3 }
+                ]
+            },
+            options: commonOptions
+        });
+
+        // L2 - Risorse: Benchmark Età
+        createChart('averageAgeBenchmarkChart', {
+            type: 'bar',
+            data: {
+                labels: ['Fermo', 'Italia', 'Macerata', 'Pesaro e U.', 'Regione', 'Ancona', 'Ascoli Piceno'],
+                datasets: [{
+                    label: 'Età Media (2024)',
+                    data: [
+                        {x: 'Fermo', y: 49.3},
+                        {x: 'Italia', y: 51.3},
+                        {x: 'Macerata', y: 53.0},
+                        {x: 'Pesaro e U.', y: 53.1},
+                        {x: 'Regione', y: 53.6},
+                        {x: 'Ancona', y: 54.0},
+                        {x: 'Ascoli Piceno', y: 56.1}
+                    ],
+                    backgroundColor: (context) => {
+                        const label = context.raw.x;
+                        if (label === 'Pesaro e U.') return colors.green; // Accento
+                        if (label === 'Italia' || label === 'Regione') return colors.purple; // Benchmark
+                        if (label === 'Ascoli Piceno') return colors.pink; // Max
+                        if (label === 'Fermo') return colors.sky; // Min
+                        return colors.orange; // Altre province
+                    },
+                    borderRadius: 5
+                }]
+            },
+            options: { ...commonBarOptions, plugins: { legend: { display: false } } }
+        });
+
+        // L2 - Territorio: Benchmark Composizione
+        createChart('territoryBenchmarkChart', {
+            type: 'bar',
+            data: {
+                labels: ['Ancona', 'Ascoli P.', 'Fermo', 'Macerata', 'Pesaro e U.'],
+                datasets: [
+                    { label: 'Patronati', data: [84, 43, 44, 63, 68], backgroundColor: colors.sky },
+                    { label: 'CAF', data: [27, 11, 15, 17, 23], backgroundColor: colors.teal },
+                    { label: 'Strutture INPS', data: [5, 2, 1, 4, 4], backgroundColor: colors.purple },
+                    { label: 'Punti Cliente', data: [0, 2, 1, 0, 2], backgroundColor: colors.orange }
+                ]
+            },
+            options: {
+                ...commonBarOptions, 
+                indexAxis: 'y',
+                scales: { 
+                    x: { stacked: true, title: { display: true, text: 'Composizione %' } }, 
+                    y: { stacked: true } 
+                },
+                plugins: {
+                    ...commonOptions.plugins,
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.x !== null) {
+                                    const total = context.chart.data.datasets.reduce((sum, ds) => sum + ds.data[context.dataIndex], 0);
+                                    const perc = ((context.parsed.x / total) * 100).toFixed(1);
+                                    label += `${context.parsed.x} (${perc}%)`;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+    });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contenzioso - Pesaro e Urbino</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        .chart-container {
+            position: relative;
+            height: 40vh;
+            width: 100%;
+        }
+
+        /* --- Stili Tab L1 --- */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .tab-btn {
+            position: relative;
+            color: #94a3b8; /* text-slate-400 */
+            transition: color 0.2s ease-in-out;
+            padding-bottom: 8px;
+        }
+        .tab-btn:hover { color: #f8fafc; /* text-slate-50 */ }
+        .tab-btn.active {
+            color: #4ade80; /* text-green-400 (Requisito) */
+            font-weight: 600;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background-color: #4ade80; /* green-400 */
+            border-radius: 2px;
+        }
+
+        /* --- Stili Card e Zoom --- */
+        .card {
+            background-color: #1e293b; /* bg-slate-800 */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #334155; /* bg-slate-700 */
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .zoomable { cursor: zoom-in; }
+        
+        #modal-overlay { 
+            transition: opacity 0.3s ease-in-out; 
+        }
+        
+        .card.zoomed {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 90vw;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+
+        /* --- Stili Sotto-Tab (L2) --- */
+        .sub-tab-btn {
+            background-color: #334155; /* bg-slate-700 */
+            color: #cbd5e1; /* text-slate-300 */
+            padding: 6px 14px;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid transparent;
+        }
+        .sub-tab-btn:hover {
+            background-color: #475569; /* bg-slate-600 */
+            color: #ffffff;
+        }
+        .sub-tab-btn.active {
+            background-color: #4ade80; /* green-400 */
+            color: #0f172a; /* text-slate-900 */
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(74, 222, 128, 0.2), 0 2px 4px -2px rgba(74, 222, 128, 0.1);
+        }
+        .sub-tab-content { display: none; }
+        .sub-tab-content.active { display: block; }
+        
+        /* --- Stili Link Approfondimento --- */
+        .deep-dive-link {
+            color: #4ade80; /* text-green-400 */
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            text-decoration-style: dotted;
+            cursor: pointer;
+        }
+        .deep-dive-link:hover {
+            color: #86efac; /* text-green-300 */
+            text-decoration-style: solid;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+    <!-- Overlay per zoom modale -->
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50"></div>
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white">Contenzioso</h1>
+            <p class="text-lg text-slate-400 mt-1">Provincia di Pesaro e Urbino (Dati 2024)</p>
+        </header>
+
+        <!-- Schede KPI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Ricorsi Amministrativi</h3>
+                <p class="text-4xl font-bold text-white mt-2">514</p>
+                <p class="text-sm text-slate-500 mt-1">Ricorsi pervenuti nel 2024</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Nuovi Giudizi Totali</h3>
+                <p class="text-4xl font-bold text-white mt-2">768</p>
+                <p class="text-sm text-slate-500 mt-1">Ordinari (170) + ATP (598)</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Esito Favorevole INPS</h3>
+                <p class="text-4xl font-bold text-green-400 mt-2">38,1%</p>
+                <p class="text-sm text-slate-500 mt-1">Sui giudizi definiti totali (727)</p>
+            </div>
+             <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Pendenza Giudiziaria</h3>
+                <p class="text-4xl font-bold text-red-400 mt-2">604</p>
+                <p class="text-sm text-slate-500 mt-1">Giudizi da lavorare a fine 2024</p>
+            </div>
+        </div>
+
+        <!-- Tab Buttons (L1) -->
+        <div id="tabs" class="flex flex-wrap justify-center gap-8 mb-6 border-b border-slate-700">
+            <button class="tab-btn active" data-tab="amministrativo">Contenzioso Amministrativo</button>
+            <button class="tab-btn" data-tab="giudiziario">Contenzioso Giudiziario</button>
+        </div>
+
+        <!-- Tab Content (L1) -->
+        <div id="tab-contents" class="mt-8">
+            
+            <!-- ======================================= -->
+            <!-- === Contenzioso Amministrativo (L1) === -->
+            <!-- ======================================= -->
+            <div id="amministrativo" class="tab-content active space-y-6">
+                
+                <!-- Navigazione Sotto-Tab (L2) -->
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <button class="sub-tab-btn active" data-tab-l1="amministrativo" data-tab-l2="amm-flusso">Flusso Principale</button>
+                    <button class="sub-tab-btn" data-tab-l1="amministrativo" data-tab-l2="amm-dettaglio-def">Dettaglio Definizioni</button>
+                </div>
+
+                <!-- Contenuto Sotto-Tab L2: Flusso -->
+                <div id="amm-flusso" class="sub-tab-content active space-y-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Flusso dei Ricorsi Amministrativi (2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>A fronte di <strong class="text-sky-400">514 nuovi ricorsi</strong> pervenuti, ne sono stati definiti (o usciti dal flusso) <strong class="text-green-400">499</strong>.</li>
+                            <li>La maggior parte dei ricorsi (<strong class="text-purple-400">322</strong>) è stata decisa dai Comitati. (Vedi <a class='deep-dive-link' data-target-l1='amministrativo' data-target-l2='amm-dettaglio-def'>l'approfondimento sulle definizioni</a>).</li>
+                            <li>Il carico di lavoro finale si attesta a <strong class="text-orange-400">40 ricorsi</strong>, in aumento rispetto ai 25 di inizio anno.</li>
+                        </ul>
+                        <div class="chart-container" style="height: 50vh;"><canvas id="adminAppealsFlowChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Contenuto Sotto-Tab L2: Dettaglio Definizioni (NUOVO) -->
+                <div id="amm-dettaglio-def" class="sub-tab-content space-y-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Esiti e Definizioni Ricorsi Amministrativi (Tav. 59)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Analizzando i <strong class="text-sky-400">499</strong> ricorsi usciti dal flusso (definiti + non ricorsi/riqualificati), la maggioranza assoluta (<strong class="text-purple-400">322</strong>, pari al 64.5%) è stata decisa nel merito dai Comitati.</li>
+                            <li>Una quota rilevante (<strong class="text-orange-400">88</strong>, pari al 17.6%) è stata riqualificata o considerata "Non Ricorso" in fase di ingresso.</li>
+                            <li>Le definizioni in autotutela ("Risolti Amministrativamente") rappresentano il <strong class="text-green-400">10.6%</strong> (53 casi) delle uscite.</li>
+                        </ul>
+                        <div class="chart-container" style="height: 45vh;"><canvas id="adminDefinitionsChart"></canvas></div>
+                    </div>
+                </div>
+                
+                <!-- Legenda (condivisa) -->
+                <div class="card">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Legenda Contenzioso Amministrativo</h3>
+                    <dl class="text-slate-400 space-y-3 text-sm">
+                        <div>
+                            <dt class="font-semibold text-slate-200">Risolti Amministrativamente</dt>
+                            <dd>Definiti dagli uffici tramite provvedimenti di Autotutela.</dd>
+                        </div>
+                         <div>
+                            <dt class="font-semibold text-slate-200">Giudicati in Istruttoria</dt>
+                            <dd>Definiti per inammissibilità o improcedibilità prima di arrivare ai Comitati.</dd>
+                        </div>
+                        <div>
+                            <dt class="font-semibold text-slate-200">Trasmessi / Deliberati dai Comitati</dt>
+                            <dd>Ricorsi che seguono l'iter decisionale collegiale.</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- ===================================== -->
+            <!-- === Contenzioso Giudiziario (L1) === -->
+            <!-- ===================================== -->
+            <div id="giudiziario" class="tab-content space-y-6">
+
+                <!-- Navigazione Sotto-Tab (L2) -->
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <button class="sub-tab-btn active" data-tab-l1="giudiziario" data-tab-l2="giud-sintesi">Sintesi Esiti e Pendenze</button>
+                    <button class="sub-tab-btn" data-tab-l1="giudiziario" data-tab-l2="giud-esiti-materia">Esiti per Materia (Ordinario)</button>
+                </div>
+
+                <!-- Contenuto Sotto-Tab L2: Sintesi (Esistente) -->
+                <div id="giud-sintesi" class="sub-tab-content active space-y-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Esito dei Giudizi Definiti per Tipologia (2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>L'esito è nettamente diverso a seconda della tipologia di contenzioso.</li>
+                            <li>Nel <strong class="text-sky-400">Contenzioso Ordinario</strong>, l'INPS ha un esito favorevole nel <strong class="text-green-400">54%</strong> dei casi. (<a class='deep-dive-link' data-target-l1='giudiziario' data-target-l2='giud-esiti-materia'>Approfondisci l'esito per materia</a>).</li>
+                            <li>Nel <strong class="text-purple-400">Contenzioso ATP su Invalidità Civile</strong>, l'esito è favorevole agli <strong class="text-pink-400">Utenti</strong> nel <strong class="text-pink-400">57%</strong> dei casi (Tav. 63).</li>
+                        </ul>
+                        <div class="chart-container" style="height: 50vh;"><canvas id="judicialOutcomesChart"></canvas></div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Giudizi Ordinari Iniziati per Materia (2024)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Il <strong class="text-sky-400">Contenzioso Contributivo</strong> (71 casi) è la materia prevalente, seguita da <strong class="text-teal-400">Invalidità Civile</strong> (41) e <strong class="text-purple-400">Pensioni</strong> (25). (Dati da Tav. 60).</li>
+                            </ul>
+                            <div class="chart-container"><canvas id="judicialCasesBySubjectChart"></canvas></div>
+                        </div>
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Andamento Pendenze (Inizio vs Fine 2024)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>La pendenza del <strong class="text-orange-400">contenzioso ordinario</strong> è aumentata, passando da 160 a 206 casi.</li>
+                                <li>La pendenza del <strong class="text-green-400">contenzioso ATP</strong> è invece leggermente diminuita, da 403 a 398 casi. (Dati da Tav. 62).</li>
+                            </ul>
+                            <div class="chart-container"><canvas id="pendingCasesChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contenuto Sotto-Tab L2: Esiti per Materia (NUOVO) -->
+                <div id="giud-esiti-materia" class="sub-tab-content space-y-6">
+                     <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Esiti Contenzioso Ordinario per Materia (Tav. 61)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>L'esito <strong class="text-green-400">favorevole all'INPS</strong> è particolarmente alto nel <strong class="text-purple-400">Contenzioso Contributivo</strong> (22 vinti vs 7 persi) e <strong class="text-teal-400">Invalidità Civile</strong> (20 vinti vs 11 persi).</li>
+                            <li>L'esito è invece <strong class="text-pink-400">favorevole agli Utenti</strong> nelle cause su <strong class="text-pink-400">Indebiti</strong> (7 persi vs 3 vinti) e <strong class="text-orange-400">Prest. Sostegno Reddito</strong> (4 persi vs 2 vinti).</li>
+                            <li>Anche le cause relative al <strong class="text-slate-400">Personale</strong> sono state sfavorevoli (2 perse).</li>
+                        </ul>
+                        <div class="chart-container" style="height: 55vh;"><canvas id="judicialOutcomesBySubjectChart"></canvas></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chartInstances = new Map();
+        
+        // Colori (rosso cambiato in arancione per dati 'negativi' o 'finali' per evitare conflitto con accento verde)
+        const colors = { 
+            orange: '#fb923c', // Arancione (per pendenze/negativi)
+            sky: '#38bdf8',    // Azzurro
+            teal: '#2dd4bf',   // Verde acqua
+            pink: '#f472b6',    // Rosa
+            red: '#f87171',    // Rosso (solo per KPI negativi)
+            purple: '#c084fc', // Viola
+            green: '#4ade80'   // Verde (accento)
+        };
+
+        // === GESTIONE TAB (L1 e L2) ===
+        const l1Tabs = document.querySelectorAll('#tabs .tab-btn');
+        const l1Contents = document.querySelectorAll('#tab-contents .tab-content');
+        const subTabs = document.querySelectorAll('.sub-tab-btn');
+
+        // Logica Tab L1
+        l1Tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                l1Tabs.forEach(t => t.classList.remove('active'));
+                l1Contents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Logica Sotto-Tab L2
+        subTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const l1ParentId = tab.dataset.tabL1;
+                const l2TargetId = tab.dataset.tabL2;
+                
+                // Deseleziona tutti i sub-tab e content NELLO STESSO L1
+                document.querySelectorAll(`#${l1ParentId} .sub-tab-btn`).forEach(t => t.classList.remove('active'));
+                document.querySelectorAll(`#${l1ParentId} .sub-tab-content`).forEach(c => c.classList.remove('active'));
+                
+                // Attiva quello cliccato
+                tab.classList.add('active');
+                document.getElementById(l2TargetId).classList.add('active');
+            });
+        });
+
+        // Logica Link Deep-Dive
+        document.querySelectorAll('.deep-dive-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetL1 = link.dataset.targetL1;
+                const targetL2 = link.dataset.targetL2;
+
+                // 1. Attiva L1 (simulando un click)
+                document.querySelector(`.tab-btn[data-tab='${targetL1}']`).click();
+                
+                // 2. Attiva L2
+                // Usiamo un piccolo delay per assicurarci che il DOM L1 sia visibile prima di cliccare L2
+                requestAnimationFrame(() => {
+                    const l2Button = document.querySelector(`.sub-tab-btn[data-tab-l2='${targetL2}']`);
+                    if (l2Button) {
+                        l2Button.click();
+                        // 3. Scrolla
+                        const l2Content = document.getElementById(targetL2);
+                        if(l2Content) {
+                            l2Content.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }
+                });
+            });
+        });
+
+
+        // === GESTIONE ZOOM MODALE ===
+        const overlay = document.getElementById('modal-overlay');
+        function unzoom() {
+            document.querySelector('.card.zoomed')?.classList.remove('zoomed');
+            overlay.classList.add('hidden');
+        }
+        document.querySelectorAll('.zoomable').forEach(card => {
+            card.addEventListener('click', (event) => {
+                // Non zoomare se si clicca su un link, un bottone o un canvas
+                if (event.target.closest('canvas, .sub-tab-btn, .deep-dive-link, button, a')) return;
+                
+                const isZoomed = card.classList.contains('zoomed');
+                unzoom(); // Chiudi eventuali altri zoom
+                if (!isZoomed) {
+                    card.classList.add('zoomed');
+                    overlay.classList.remove('hidden');
+                }
+            });
+        });
+        overlay.addEventListener('click', unzoom);
+
+        // === IMPOSTAZIONI GRAFICI ===
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#94a3b8';
+        const commonOptions = { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { position: 'bottom', labels: { color: '#cbd5e1' } } 
+            }, 
+            scales: { 
+                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }, 
+                x: { grid: { display: false }, ticks: { color: '#94a3b8' } } 
+            } 
+        };
+
+        function createChart(canvasId, config) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            // Distrugge il grafico precedente se esiste (utile per hot-reload)
+            if (chartInstances.has(canvas)) {
+                chartInstances.get(canvas).destroy();
+            }
+            const chart = new Chart(canvas, config);
+            chartInstances.set(canvas, chart);
+            return chart;
+        }
+
+        // --- GRAFICI L1 ESISTENTI (Aggiornati) ---
+
+        // Grafico Flusso Amministrativo
+        createChart('adminAppealsFlowChart', {
+            type: 'bar',
+            data: {
+                labels: ['Da Lavorare (Inizio Anno)', 'Pervenuti', 'Usciti (Definiti/Altri)', 'Da Lavorare (Fine Anno)'],
+                datasets: [{
+                    label: 'Numero Ricorsi',
+                    data: [25, 514, 499, 40], // 499 = 500 del grafico originale, 499 è la somma di Tav. 59
+                    backgroundColor: [colors.orange, colors.sky, colors.green, colors.orange], // Fine anno arancione
+                    borderRadius: 5
+                }]
+            },
+            options: {...commonOptions, plugins: { legend: { display: false } } }
+        });
+        
+        // Grafico Esiti Giudiziari
+        createChart('judicialOutcomesChart', {
+            type: 'bar',
+            data: {
+                labels: ['Contenzioso Ordinario', 'ATP Invalidità Civile'],
+                datasets: [
+                    { label: 'Favorevole INPS', data: [67, 210], backgroundColor: colors.green, borderRadius: 5 },
+                    { label: 'Favorevole Utenti', data: [38, 344], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Altri Esiti', data: [19, 49], backgroundColor: colors.orange, borderRadius: 5 } // Altri esiti arancione
+                ]
+            },
+            options: { ...commonOptions, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: 'rgba(255, 255, 255, 0.1)' } } } }
+        });
+        
+        // Grafico Cause per Materia
+        createChart('judicialCasesBySubjectChart', {
+            type: 'bar',
+            data: {
+                labels: ['Contributivo', 'Inv. Civile', 'Pensioni', 'Indebiti', 'Altri'],
+                datasets: [{
+                    label: 'Giudizi Iniziati',
+                    data: [71, 41, 25, 19, 14],
+                    backgroundColor: [colors.sky, colors.teal, colors.purple, colors.pink, colors.orange],
+                    borderRadius: 5
+                }]
+            },
+            options: { ...commonOptions, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { y: { grid: { display: false } } } }
+        });
+
+        // Grafico Andamento Pendenze
+        createChart('pendingCasesChart', {
+            type: 'bar',
+            data: {
+                labels: ['Contenzioso Ordinario', 'Contenzioso ATP'],
+                datasets: [
+                    { label: 'Pendenza Inizio 2024', data: [160, 403], backgroundColor: 'rgba(251, 146, 60, 0.6)', borderRadius: 5 }, // Arancione chiaro
+                    { label: 'Pendenza Fine 2024', data: [206, 398], backgroundColor: colors.orange, borderRadius: 5 } // Arancione scuro
+                ]
+            },
+            options: commonOptions
+        });
+
+        // --- GRAFICI L2 NUOVI ---
+
+        // (NUOVO) Grafico Dettaglio Definizioni Amministrative (Tav. 59)
+        createChart('adminDefinitionsChart', {
+            type: 'doughnut',
+            data: {
+                labels: ['Deliberati dai Comitati', 'Non Ricorsi/Riqualificati', 'Risolti Ammin.te', 'Cessata Materia', 'Giudicati in Istruttoria'],
+                datasets: [{
+                    label: 'Tipologia Definizione/Uscita',
+                    data: [322, 88, 53, 21, 15],
+                    backgroundColor: [colors.purple, colors.orange, colors.green, colors.pink, colors.sky],
+                    borderColor: '#1e293b', // Colore sfondo card
+                    borderWidth: 4,
+                    hoverOffset: 4
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { 
+                        position: 'right', 
+                        labels: { color: '#cbd5e1', boxWidth: 20 }
+                    } 
+                },
+                scales: { 
+                    x: { display: false, grid: { display: false } }, 
+                    y: { display: false, grid: { display: false } } 
+                } 
+            }
+        });
+
+        // (NUOVO) Grafico Esiti Giudiziari Ordinari per Materia (Tav. 61)
+        createChart('judicialOutcomesBySubjectChart', {
+            type: 'bar',
+            data: {
+                labels: ['Contributivo', 'Inv. Civile', 'Pensioni', 'Indebiti', 'Sostegno Reddito', 'Personale'],
+                datasets: [
+                    { label: 'Favorevole INPS', data: [22, 20, 16, 3, 2, 0], backgroundColor: colors.green, borderRadius: 5 },
+                    { label: 'Favorevole Utenti', data: [7, 11, 7, 7, 4, 2], backgroundColor: colors.pink, borderRadius: 5 },
+                ]
+            },
+            options: { 
+                ...commonOptions, 
+                indexAxis: 'y', 
+                scales: { 
+                    x: { stacked: true, grid: { color: 'rgba(255, 255, 255, 0.1)' } }, 
+                    y: { stacked: true, grid: { display: false } } 
+                } 
+            }
+        });
+    });
+    </script>
+</body>
+</html>
+

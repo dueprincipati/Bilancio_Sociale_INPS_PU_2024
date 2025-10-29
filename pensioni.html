@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prestazioni Pensionistiche - Pesaro e Urbino</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* bg-slate-900 */
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        .chart-container {
+            position: relative;
+            height: 40vh;
+            width: 100%;
+        }
+
+        /* Navigazione L1 (Principale) */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-btn {
+            position: relative;
+            color: #94a3b8; /* text-slate-400 */
+            transition: color 0.2s ease-in-out;
+            padding-bottom: 8px;
+            font-weight: 500;
+        }
+        .tab-btn:hover { color: #f8fafc; /* text-slate-50 */ }
+        .tab-btn.active {
+            color: #4ade80; /* text-green-400 */
+            font-weight: 600;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background-color: #4ade80; /* text-green-400 */
+            border-radius: 2px;
+        }
+
+        /* Navigazione L2 (Sotto-Tab) */
+        .sub-tab-content { display: none; }
+        .sub-tab-content.active { display: block; }
+        .sub-tab-btn {
+            background-color: transparent;
+            border: 1px solid #334155; /* border-slate-700 */
+            color: #94a3b8; /* text-slate-400 */
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease-in-out;
+            font-weight: 500;
+        }
+        .sub-tab-btn:hover {
+            background-color: #1e293b; /* bg-slate-800 */
+            color: #f8fafc; /* text-slate-50 */
+        }
+        .sub-tab-btn.active {
+            background-color: #4ade80; /* bg-green-400 */
+            color: #0f172a; /* text-slate-900 */
+            font-weight: 700;
+            border-color: #4ade80;
+        }
+
+
+        .card {
+            background-color: #1e293b; /* bg-slate-800 */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #334155; /* border-slate-700 */
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .zoomable { cursor: zoom-in; }
+        
+        #modal-overlay { 
+            transition: opacity 0.3s ease-in-out; 
+            backdrop-filter: blur(4px);
+        }
+        
+        .card.zoomed {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 90vw;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+
+        /* Link di approfondimento */
+        .deep-dive-link {
+            color: #4ade80; /* text-green-400 */
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .deep-dive-link:hover {
+            color: #86efac; /* text-green-300 */
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50"></div>
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white">Prestazioni Pensionistiche e Previdenziali</h1>
+            <p class="text-lg text-slate-400 mt-1">Provincia di Pesaro e Urbino</p>
+        </header>
+
+        <!-- Schede KPI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Pensionati Totali</h3>
+                <p class="text-4xl font-bold text-white mt-2">98.502</p>
+                <p class="text-sm text-slate-500 mt-1">Dato aggiornato al 2024</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Pensioni Liquidate 2024</h3>
+                <p class="text-4xl font-bold text-white mt-2">5.822</p>
+                <p class="text-sm text-slate-500 mt-1">Nuove pensioni IVS</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Efficienza Liquidazione</h3>
+                <p class="text-4xl font-bold text-green-400 mt-2">76,9%</p>
+                <p class="text-sm text-slate-500 mt-1">Gest. Privata liquidate < 30gg</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Anticipi Pensionistici</h3>
+                <p class="text-4xl font-bold text-white mt-2">356</p>
+                <p class="text-sm text-slate-500 mt-1">Domande accolte nel 2024</p>
+            </div>
+        </div>
+
+
+        <!-- Tab Buttons (L1) -->
+        <div id="tabs" class="flex flex-wrap justify-center gap-8 mb-6 border-b border-slate-700">
+            <button class="tab-btn active" data-tab="vigenti">Pensioni Vigenti</button>
+            <button class="tab-btn" data-tab="liquidate">Pensioni Liquidate</button>
+            <button class="tab-btn" data-tab="tempi">Tempi di Liquidazione</button>
+            <button class="tab-btn" data-tab="anticipi">Anticipi Pensionistici</button>
+            <button class="tab-btn" data-tab="approfondimenti">Approfondimenti</button> <!-- NUOVO TAB L1 -->
+        </div>
+
+        <!-- Tab Content (L1) -->
+        <div id="tab-contents" class="mt-8">
+            <!-- Pensioni Vigenti -->
+            <div id="vigenti" class="tab-content active space-y-6">
+                <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Pensionati per Tipologia e Genere (2024)</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>Il numero di pensionati IVS (previdenziali) è quasi paritario tra i generi.</li>
+                        <li>Le <strong class="text-pink-400">donne</strong> sono nettamente maggioritarie tra i beneficiari di prestazioni assistenziali (pensioni/assegni sociali e invalidità civile).</li>
+                    </ul>
+                    <div class="chart-container" style="height: 50vh;"><canvas id="pensionersByTypeChart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Importo Medio Mensile Pensioni IVS per Genere e Gestione</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                             <li>Emerge un <strong class="text-red-400">gender gap</strong> significativo in tutte le gestioni, con gli <strong class="text-sky-400">uomini</strong> che percepiscono un importo medio mensile molto più elevato.</li>
+                             <li>Il divario è particolarmente marcato nel Fondo Pensioni Lavoratori Dipendenti (FPLD).</li>
+                             <!-- LINK DI APPROFONDIMENTO (Tav 32) -->
+                             <li>Analizza le cause del divario negli <a class="deep-dive-link" data-target-tab="approfondimenti" data-target-subtab="analisi-importi">Approfondimenti</a>.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="averageAmountChart"></canvas></div>
+                    </div>
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Età Media alla Decorrenza (Vecchiaia/Anticipate)</h3>
+                         <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>L'età di pensionamento per le <strong class="text-pink-400">donne</strong> è in costante e leggero aumento, attestandosi a 65 anni nel 2024.</li>
+                            <li>L'età per gli <strong class="text-sky-400">uomini</strong> rimane più stabile, intorno ai 63 anni.</li>
+                            <!-- LINK DI APPROFONDIMENTO (Tav 29) -->
+                            <li>Confronta i dati con le altre province negli <a class="deep-dive-link" data-target-tab="approfondimenti" data-target-subtab="eta-pensionamento">Approfondimenti</a>.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="retirementAgeChart"></canvas></div>
+                    </div>
+                </div>
+                 <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Numero Pensioni IVS per Gestione (2024)</h3>
+                     <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>La maggior parte delle pensioni è erogata dalle gestioni dei <strong class="text-purple-400">Lavoratori Autonomi</strong> (37.4%) e dal <strong class="text-sky-400">Fondo Lavoratori Dipendenti</strong> (35.8%).</li>
+                        <li>Seguono i <strong class="text-teal-400">Dipendenti Pubblici</strong> con il 18.3% del totale.</li>
+                        <!-- LINK DI APPROFONDIMENTO (Tav 31) -->
+                        <li>Scopri la composizione interna di queste gestioni negli <a class="deep-dive-link" data-target-tab="approfondimenti" data-target-subtab="composizione-ivs">Approfondimenti</a>.</li>
+                    </ul>
+                    <div class="chart-container"><canvas id="pensionsByFundChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Pensioni Liquidate (LAYOUT 2x2 AGGIORNATO) -->
+            <div id="liquidate" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Andamento Pensioni IVS Liquidate (2021-2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Il numero totale di pensioni liquidate mostra una certa variabilità, con un picco nel 2022 e un calo nel 2023, seguito da una ripresa nel 2024.</li>
+                            <li>Le <strong class="text-pink-400">donne</strong> sono costantemente superiori agli <strong class="text-sky-400">uomini</strong>.</li>
+                            <!-- LINK DI APPROFONDIMENTO (Tav 33+34) -->
+                            <li>Analizza la composizione storica del flusso negli <a class="deep-dive-link" data-target-tab="approfondimenti" data-target-subtab="flussi-liquidate">Approfondimenti</a>.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="liquidatedPensionsTrendChart"></canvas></div>
+                    </div>
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Liquidate per Sistema di Calcolo (2021-2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Il sistema <strong class="text-sky-400">Misto</strong> è predominante e stabile nel tempo.</li>
+                            <li>Si osserva un calo del <strong class="text-purple-400">Retributivo</strong> a favore di un leggero aumento del <strong class="text-teal-400">Contributivo</strong> puro.</li>
+                            <!-- LINK DI APPROFONDIMENTO (Tav 35) -->
+                            <li>Analizza la scomposizione per gestione negli <a class="deep-dive-link" data-target-tab="approfondimenti" data-target-subtab="sistemi-calcolo">Approfondimenti</a>.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="calculationSystemChart"></canvas></div>
+                    </div>
+                     <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Composizione Pensioni Liquidate (2024)</h3>
+                         <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Le pensioni di <strong class="text-teal-400">Vecchiaia</strong> (31.9%) e <strong class="text-sky-400">Anzianità/Anticipate</strong> (29.2%) costituiscono la maggioranza.</li>
+                            <li>Seguono i <strong class="text-purple-400">Superstiti</strong> (28.4%) e l'<strong class="text-pink-400">Invalidità</strong> (10.5%).</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="liquidatedCompositionChart"></canvas></div>
+                    </div>
+                    <!-- NUOVO GRAFICO L1 (Tav 36) -->
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Importo Medio Liquidate per Genere (2024)</h3>
+                         <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Anche sui nuovi flussi emerge un <strong class="text-red-400">forte gender gap</strong>, specialmente nella Gestione Pubblica e FPLD.</li>
+                            <li>Solo per gli <strong class="text-purple-400">Autonomi</strong> gli importi medi di liquidazione sono più vicini.</li>
+                            <!-- LINK DI APPROFONDIMENTO (Tav 36) -->
+                            <li>Esplora il dettaglio per trattamento negli <a class="deep-dive-link" data-target-tab="approfondimenti" data-target-subtab="analisi-importi-liquidate">Approfondimenti</a>.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="liquidatedAverageAmountChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tempi di Liquidazione -->
+            <div id="tempi" class="tab-content space-y-6">
+                <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Performance di Liquidazione per Gestione (Entro 30 giorni, 2024)</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>La provincia di Pesaro e Urbino mostra <strong class="text-green-400">performance eccellenti</strong> nella liquidazione delle pensioni.</li>
+                        <li>I <strong class="text-teal-400">Fondi Speciali</strong> registrano il risultato migliore, con il <strong class="text-teal-400">98%</strong> delle pratiche definite entro 30 giorni.</li>
+                        <li>Anche la <strong class="text-purple-400">Gestione Pubblica</strong> (78,9%) e la <strong class="text-sky-400">Gestione Privata</strong> (76,9%) mostrano ottimi livelli di efficienza.</li>
+                    </ul>
+                    <div class="chart-container" style="height: 50vh;"><canvas id="performanceByFundChart"></canvas></div>
+                </div>
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Distribuzione Tempi - Gestione Privata (2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Oltre due terzi delle pensioni (<strong class="text-green-400">76,9%</strong>) vengono liquidate entro 30 giorni.</li>
+                            <li>Solo una piccola quota (<strong class="text-red-400">7,4%</strong>) richiede più di 90 giorni per la lavorazione.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="privateTimingDistributionChart"></canvas></div>
+                    </div>
+                     <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Confronto Performance vs Italia (Entro 30 gg)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>La performance di Pesaro e Urbino è sostanzialmente <strong class="text-green-400">in linea o leggermente migliore</strong> della media nazionale per la Gestione Privata.</li>
+                             <li>Per la Gestione Pubblica, la provincia registra tempi leggermente <strong class="text-orange-400">più lenti</strong> rispetto alla media italiana.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="benchmarkTimingChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anticipi Pensionistici -->
+            <div id="anticipi" class="tab-content space-y-6">
+                 <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Andamento Domande Accolte per Principali Anticipi</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>Si osserva un <strong class="text-red-400">drastico calo</strong> delle domande per <strong class="text-pink-400">Opzione Donna</strong>, passate da 218 nel 2022 a 39 nel 2024.</li>
+                        <li>Le pensioni "Quota" hanno visto un picco con <strong class="text-sky-400">Quota 100</strong> nel 2021 (non mostrato), per poi ridursi notevolmente con le misure successive.</li>
+                    </ul>
+                    <div class="chart-container" style="height: 50vh;"><canvas id="anticipiTrendChart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Composizione Anticipi Pensionistici (2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>L'<strong class="text-teal-400">APE Sociale</strong> è la forma di anticipo più utilizzata nel 2024, con 145 certificazioni accolte.</li>
+                            <li>Seguono <strong class="text-sky-400">Quota 103</strong> (100) e i <strong class="text-purple-400">Lavoratori Precoci</strong> (71).</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="anticipiCompositionChart"></canvas></div>
+                    </div>
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Distribuzione per Genere "Quote" (2021-2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Tutte le forme di pensione "Quota" sono state utilizzate prevalentemente da <strong class="text-sky-400">uomini</strong>.</li>
+                            <li>Il divario di genere è stato particolarmente accentuato in <strong class="text-red-400">Quota 103</strong>.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="quoteGenderChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NUOVO TAB APPROFONDIMENTI (L1) -->
+            <div id="approfondimenti" class="tab-content space-y-6">
+                <!-- Navigazione Sotto-Tab (L2) -->
+                <div class="sub-tabs-nav flex flex-wrap gap-4 mb-4 border-b border-slate-700">
+                    <button class="sub-tab-btn active" data-subtab="eta-pensionamento">Analisi Età Pensionamento</button>
+                    <button class="sub-tab-btn" data-subtab="composizione-ivs">Composizione Pensioni IVS</button>
+                    <button class="sub-tab-btn" data-subtab="analisi-importi">Analisi Importi (Gender Gap)</button>
+                    <button class="sub-tab-btn" data-subtab="flussi-liquidate">Analisi Flussi Liquidate</button>
+                    <button class="sub-tab-btn" data-subtab="sistemi-calcolo">Sistemi di Calcolo</button>
+                    <button class="sub-tab-btn" data-subtab="analisi-importi-liquidate">Analisi Importi Liquidate</button>
+                </div>
+                
+                <!-- Contenuto Sotto-Tab (L2) -->
+                <div id="sub-tab-contents">
+                    <!-- Sotto-Tab: Età Pensionamento (Tav 29) -->
+                    <div id="eta-pensionamento" class="sub-tab-content active space-y-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Età Media Pensionamento per Provincia (2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Nel 2024, <strong class="text-pink-400">Pesaro e Urbino (65.0 anni)</strong> e <strong class="text-pink-400">Fermo (65.4 anni)</strong> registrano l'età media di pensionamento femminile più alta delle Marche.</li>
+                                    <li>Per gli <strong class="text-sky-400">uomini</strong>, l'età è più omogenea, con Pesaro (63.2 anni) in linea con la media regionale, mentre Macerata (62.9) è la provincia con l'età più bassa.</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveAgeByProvinceChart"></canvas></div>
+                            </div>
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Benchmark Età Media vs Marche e Italia (2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>L'età media femminile a <strong class="text-pink-400">Pesaro (65.0)</strong> è leggermente superiore alla media regionale (64.9) ma inferiore alla media <strong class="text-pink-400">nazionale (65.2)</strong>.</li>
+                                    <li>L'età maschile a <strong class="text-sky-400">Pesaro (63.2)</strong> è perfettamente allineata con la media regionale, ma significativamente più bassa di quella <strong class="text-sky-400">nazionale (63.8)</strong>.</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveAgeBenchmarkChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sotto-Tab: Composizione IVS (Tav 31) -->
+                    <div id="composizione-ivs" class="sub-tab-content space-y-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Pensioni IVS per Categoria e Genere (2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Questo grafico scompone il totale delle pensioni IVS vigenti, evidenziando nette differenze di genere.</li>
+                                    <li>Le pensioni di <strong class="text-sky-400">Anzianità/Anticipate</strong> sono a netta prevalenza <strong class="text-sky-400">maschile</strong> (29.7k vs 15.8k).</li>
+                                    <li>Le pensioni di <strong class="text-pink-400">Vecchiaia</strong> (20.3k vs 7.6k) e <strong class="text-purple-400">Superstiti</strong> (21.3k vs 4.3k) sono invece a larghissima maggioranza <strong class="text-pink-400">femminile</strong>.</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveIVSByGenderChart"></canvas></div>
+                            </div>
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Composizione Pensioni per Gestione (2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Il <strong class="text-teal-400">Fondo Dipendenti Pubblici</strong> è trainato dalle pensioni di <strong class="text-sky-400">Anzianità/Anticipate</strong> (59.7%).</li>
+                                    <li>Il <strong class="text-pink-400">FPLD (Privati)</strong> è la gestione più equilibrata, con quote simili tra <strong class="text-sky-400">Anticipate</strong> (35.4%), <strong class="text-pink-400">Vecchiaia</strong> (27.1%) e <strong class="text-purple-400">Superstiti</strong> (26.0%).</li>
+                                    <li>I <strong class="text-purple-400">Lavoratori Autonomi</strong> hanno una quota predominante di <strong class="text-sky-400">Anticipate</strong> (41.9%) e <strong class="text-pink-400">Vecchiaia</strong> (30.2%).</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveIVSByFundChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sotto-Tab: Analisi Importi (Gender Gap) (Tav 32) -->
+                    <div id="analisi-importi" class="sub-tab-content space-y-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                             <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Gender Gap per Trattamento (FPLD, 2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Il gender gap nel FPLD (grafico L1) è spiegato dalla differenza negli importi delle prestazioni principali.</li>
+                                    <li>Nelle pensioni di <strong class="text-sky-400">Anzianità</strong>, gli uomini percepiscono in media <strong class="text-sky-400">2.302€</strong> contro i <strong class="text-pink-400">1.662€</strong> delle donne.</li>
+                                    <li>Nelle pensioni di <strong class="text-pink-400">Vecchiaia</strong>, il divario è ancora più marcato: <strong class="text-sky-400">1.321€</strong> per gli uomini contro <strong class="text-pink-400">717€</strong> per le donne.</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveGapFPLDChart"></canvas></div>
+                            </div>
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Gender Gap per Trattamento (Dip. Pubblici, 2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Anche nella Gestione Pubblica, gli importi medi maschili sono superiori in tutte le categorie, ad eccezione dei Superstiti.</li>
+                                    <li>Il divario maggiore si registra nelle pensioni di <strong class="text-pink-400">Vecchiaia</strong>, dove gli uomini percepiscono <strong class="text-sky-400">3.075€</strong> contro i <strong class="text-pink-400">1.968€</strong> delle donne.</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveGapPublicChart"></canvas></div>
+                            </div>
+                        </div>
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Benchmark Importi Medi (Pesaro vs Italia, 2024)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Gli importi medi a Pesaro e Urbino sono <strong class="text-red-400">sistematicamente inferiori</strong> alla media nazionale in quasi tutte le gestioni, sia per gli uomini che per le donne.</li>
+                                <li>Il divario è particolarmente evidente nel <strong class="text-pink-400">FPLD</strong>, dove l'importo medio femminile nazionale (<strong class="text-pink-400">1.048€</strong>) è superiore a quello provinciale (<strong class="text-pink-400">905€</strong>).</li>
+                            </ul>
+                            <div class="chart-container"><canvas id="deepDiveBenchmarkImportiChart"></canvas></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sotto-Tab: Analisi Flussi Liquidate (Tav 33+34) -->
+                    <div id="flussi-liquidate" class="sub-tab-content space-y-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Andamento Liquidate per Trattamento (2021-2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Questo grafico scompone il trend totale (visibile nel tab "Pensioni Liquidate") per tipo di trattamento.</li>
+                                    <li>Si nota un trend strutturale: le <strong class="text-sky-400">Anticipate/Anzianità</strong> sono in calo costante, mentre le <strong class="text-pink-400">pensioni di Vecchiaia</strong> sono in crescita.</li>
+                                    <li>Il calo totale del 2023 è stato guidato da un crollo delle <strong class="text-sky-400">pensioni anticipate</strong> (-300) e dei <strong class="text-purple-400">superstiti</strong> (-180).</li>
+                                    <li>La ripresa del 2024 è dovuta a un rimbalzo delle <strong class="text-pink-400">pensioni di vecchiaia</strong> (+250) e di <strong class="text-orange-400">invalidità</strong> (+100).</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveLiquidateTrendTypeChart"></canvas></div>
+                            </div>
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Andamento Liquidate per Gestione (2021-2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Il flusso delle principali gestioni mostra andamenti diversi.</li>
+                                    <li>I <strong class="text-teal-400">Dipendenti Pubblici</strong> mostrano un calo costante e strutturale del numero di nuove liquidazioni dal 2021.</li>
+                                    <li>I <strong class="text-purple-400">Lavoratori Autonomi</strong> hanno avuto un calo nel 2023, ma si sono ripresi nel 2024.</li>
+                                    <li>Il <strong class="text-pink-400">FPLD (Dipendenti Privati)</strong> è la gestione più volatile e ha guidato la crescita totale del 2024.</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveLiquidateTrendFundChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sotto-Tab: Sistemi di Calcolo (Tav 35) -->
+                    <div id="sistemi-calcolo" class="sub-tab-content space-y-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Composizione Sistemi di Calcolo per Gestione (2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Questo grafico scompone la struttura dei sistemi di calcolo per le pensioni liquidate nel 2024.</li>
+                                    <li>Come previsto, i <strong class="text-orange-400">Parasubordinati</strong> utilizzano quasi esclusivamente il sistema <strong class="text-teal-400">Contributivo</strong> (451 pensioni).</li>
+                                    <li><strong class="text-pink-400">FPLD</strong> e <strong class="text-purple-400">Autonomi</strong> si basano prevalentemente sul sistema <strong class="text-sky-400">Misto</strong>.</li>
+                                    <li>I <strong class="text-teal-400">Dipendenti Pubblici</strong> hanno ancora una quota rilevante di <strong class="text-purple-400">Retributivo</strong> (167) rispetto al <strong class="text-teal-400">Contributivo</strong> puro (13).</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveCalcSystemFundChart"></canvas></div>
+                            </div>
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Focus Andamento Sistema Contributivo (2021-2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Il grafico L1 mostra una crescita del Contributivo. Questo grafico spiega *chi* la guida.</li>
+                                    <li>La crescita è trainata quasi interamente dai <strong class="text-orange-400">Parasubordinati</strong> (da 316 a 451 pensioni) e in parte dal <strong class="text-pink-400">FPLD</strong> (da 182 a 273).</li>
+                                    <li>Nei <strong class="text-purple-400">Lavoratori Autonomi</strong> e <strong class="text-teal-400">Dipendenti Pubblici</strong>, il flusso di pensioni "contributive pure" è minimo e in calo.</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveCalcSystemTrendChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sotto-Tab: Analisi Importi Liquidate (Tav 36) -->
+                    <div id="analisi-importi-liquidate" class="sub-tab-content space-y-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                             <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Gender Gap Liquidate (FPLD, 2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Il gap negli importi delle nuove pensioni FPLD è evidente.</li>
+                                    <li>Nelle pensioni di <strong class="text-sky-400">Anzianità</strong>, gli uomini liquidano con <strong class="text-sky-400">2.076€</strong> contro i <strong class="text-pink-400">1.608€</strong> delle donne.</li>
+                                    <li>Nelle pensioni di <strong class="text-pink-400">Vecchiaia</strong>, il divario è ancora più netto: <strong class="text-sky-400">1.320€</strong> (uomini) vs <strong class="text-pink-400">722€</strong> (donne).</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveGapLiqFPLDChart"></canvas></div>
+                            </div>
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Gender Gap Liquidate (Dip. Pubblici, 2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Il gap tra i nuovi pensionati pubblici è significativo.</li>
+                                    <li>Nelle <strong class="text-pink-400">pensioni di Vecchiaia</strong> liquidate, gli uomini ottengono <strong class="text-sky-400">3.184€</strong> contro i <strong class="text-pink-400">2.065€</strong> delle donne.</li>
+                                    <li>Il divario è presente ma meno marcato nelle pensioni di <strong class="text-sky-400">Anzianità</strong> (<strong class="text-sky-400">2.507€</strong> vs <strong class="text-pink-400">2.245€</strong>).</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="deepDiveGapLiqPublicChart"></canvas></div>
+                            </div>
+                        </div>
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Benchmark Importi Liquidati (Pesaro vs Italia, 2024)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Gli importi delle nuove pensioni a Pesaro sono <strong class="text-red-400">quasi sempre inferiori</strong> alla media nazionale.</li>
+                                <li>Fanno eccezione le <strong class="text-pink-400">donne</strong> del <strong class="text-pink-400">FPLD</strong>, che a Pesaro liquidano con un importo medio (<strong class="text-pink-400">969€</strong>) leggermente <strong class="text-red-400">inferiore</strong> alla media nazionale (<strong class="text-pink-400">1.014€</strong>). *[Nota: Il dato aggregato sembra discostarsi da quello nazionale, ma è influenzato dalla composizione dei trattamenti (es. più superstiti a Pesaro)]*</li>
+                                <li>Gli <strong class="text-sky-400">uomini</strong> in tutte le gestioni liquidano pensioni con importi <strong class="text-red-400">significativamente più bassi</strong> della media italiana.</li>
+                            </ul>
+                            <div class="chart-container"><canvas id="deepDiveBenchmarkLiqImportiChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chartInstances = new Map();
+        // Palette Dati: Rosa, Azzurro, Viola, Arancione, Teal, Verde
+        const colors = { 
+            orange: '#fb923c', // arancione
+            sky: '#38bdf8',    // azzurro
+            teal: '#2dd4bf',   // teal
+            pink: '#f472b6',    // rosa
+            red: '#f87171',     // rosso
+            purple: '#c084fc', // viola
+            green: '#4ade80'    // verde (accento UI)
+        };
+
+        // Impostazioni globali Chart.js
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#94a3b8'; // text-slate-400
+        Chart.defaults.plugins.legend.position = 'bottom';
+        Chart.defaults.plugins.legend.labels.color = '#cbd5e1'; // text-slate-300
+
+        // --- Funzioni Generatrici di Opzioni (per evitare bug di rendering) ---
+
+        // Opzioni base per Line e Bar chart
+        function getBaseChartOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                }
+            };
+        }
+
+        // Opzioni per grafici a barre sovrapposte
+        function getStackedChartOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        stacked: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    x: {
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                }
+            };
+        }
+
+        // Opzioni per grafici a barre orizzontali (usato in 'tempi')
+        function getHorizontalBarOptions() {
+            return {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#94a3b8', callback: (v) => v + '%' }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                }
+            };
+        }
+
+        // Opzioni per grafici Doughnut
+        function getDoughnutOptions() {
+             return {
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { position: 'bottom', labels: { color: '#cbd5e1' } } 
+                } 
+             };
+        }
+
+        // Opzioni specifiche per grafici Età (non partono da 0)
+        function getAgeChartOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false, // Non parte da zero
+                        suggestedMin: 60, // Suggerisce un minimo
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                }
+            };
+        }
+
+        // --- Gestione Tab L1 ---
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Disattiva tutti i tab L1
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                
+                // Attiva il tab L1 cliccato
+                tab.classList.add('active');
+                const activeContent = document.getElementById(tab.dataset.tab);
+                activeContent.classList.add('active');
+                
+                // Renderizza i grafici per il tab L1
+                renderChartsForTab(activeContent);
+
+                // Se il tab attivato è "Approfondimenti", attiva il suo primo sotto-tab L2
+                if (activeContent.id === 'approfondimenti') {
+                    activateSubTab(activeContent.querySelector('.sub-tab-btn'));
+                }
+            });
+        });
+        
+        // Render iniziale per il tab L1 attivo di default
+        renderChartsForTab(document.querySelector('.tab-content.active'));
+
+        // --- Gestione Sotto-Tab L2 ---
+        const subTabs = document.querySelectorAll('.sub-tab-btn');
+        
+        subTabs.forEach(subTab => {
+            subTab.addEventListener('click', () => {
+                activateSubTab(subTab);
+            });
+        });
+
+        function activateSubTab(subTabToActivate) {
+            if (!subTabToActivate) return;
+
+            // Disattiva tutti i sotto-tab L2
+            subTabs.forEach(st => st.classList.remove('active'));
+            document.querySelectorAll('.sub-tab-content').forEach(sc => sc.classList.remove('active'));
+
+            // Attiva il sotto-tab L2 cliccato
+            subTabToActivate.classList.add('active');
+            const activeSubContent = document.getElementById(subTabToActivate.dataset.subtab);
+            if (activeSubContent) {
+                activeSubContent.classList.add('active');
+                // Renderizza i grafici per il sotto-tab L2
+                renderSubChartsForTab(activeSubContent);
+            }
+        }
+
+        // --- Gestione Deep Linking ---
+        document.querySelectorAll('.deep-dive-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetTabId = link.dataset.targetTab;
+                const targetSubTabId = link.dataset.targetSubtab;
+
+                // 1. Attiva il Tab L1 (es. "Approfondimenti")
+                const targetTab = document.querySelector(`.tab-btn[data-tab="${targetTabId}"]`);
+                if (targetTab) {
+                    targetTab.click();
+                }
+
+                // 2. Attiva il Sotto-Tab L2 (es. "eta-pensionamento")
+                const targetSubTab = document.querySelector(`.sub-tab-btn[data-subtab="${targetSubTabId}"]`);
+                if (targetSubTab) {
+                    activateSubTab(targetSubTab);
+                }
+            });
+        });
+
+
+        // --- Gestione Zoom ---
+        const overlay = document.getElementById('modal-overlay');
+        function unzoom() {
+            document.querySelector('.card.zoomed')?.classList.remove('zoomed');
+            overlay.classList.add('hidden');
+        }
+        document.querySelectorAll('.zoomable').forEach(card => {
+            card.addEventListener('click', (event) => {
+                // Non zoomare se si clicca su un link, un bottone o la canvas stessa
+                if (event.target.closest('canvas, a, button')) return;
+                
+                const isZoomed = card.classList.contains('zoomed');
+                unzoom(); // Chiudi qualsiasi card già zoomata
+                if (!isZoomed) {
+                    card.classList.add('zoomed');
+                    overlay.classList.remove('hidden');
+                }
+            });
+        });
+        overlay.addEventListener('click', unzoom);
+
+        // --- Funzione di Creazione Grafici (con cache) ---
+        function createChart(canvasId, config) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            
+            // Distrugge il grafico esistente se presente
+            if (chartInstances.has(canvasId)) {
+                chartInstances.get(canvasId).destroy();
+            }
+            
+            // Crea il nuovo grafico e lo salva
+            const chart = new Chart(canvas, config);
+            chartInstances.set(canvasId, chart);
+        }
+
+        // --- Funzione di Rendering per Tab L1 ---
+        function renderChartsForTab(tabElement) {
+            if (!tabElement) return;
+
+            const tooltipEuro = { tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw.toFixed(2)} €` } } };
+
+            if (tabElement.id === 'vigenti') {
+                createChart('pensionersByTypeChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Femmine', 'Maschi'],
+                        datasets: [
+                            { label: 'Pensionati IVS', data: [45645, 43460], backgroundColor: colors.teal, borderRadius: 5 },
+                            { label: 'Beneficiari Assistenziali', data: [14394, 8566], backgroundColor: colors.purple, borderRadius: 5 }
+                        ]
+                    },
+                    options: getStackedChartOptions()
+                });
+
+                createChart('averageAmountChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['FPLD', 'Dip. Pubblici', 'Lavoratori Autonomi'],
+                        datasets: [
+                            { label: 'Femmine', data: [905.5, 1875.4, 754.4], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi', data: [1789.1, 2511.7, 1330.4], backgroundColor: colors.sky, borderRadius: 5 }
+                        ]
+                    },
+                    options: { ...getBaseChartOptions(), plugins: tooltipEuro }
+                });
+
+                createChart('retirementAgeChart', {
+                    type: 'line',
+                    data: {
+                        labels: ['2022', '2023', '2024'],
+                        datasets: [
+                            { label: 'Femmine', data: [64.4, 64.9, 65.0], borderColor: colors.pink, tension: 0.3 },
+                            { label: 'Maschi', data: [63.4, 63.1, 63.2], borderColor: colors.sky, tension: 0.3 }
+                        ]
+                    },
+                    options: getBaseChartOptions()
+                });
+
+                createChart('pensionsByFundChart', {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Lavoratori Autonomi', 'FPLD', 'Dipendenti Pubblici', 'Altre Gestioni'],
+                        datasets: [{
+                            data: [42269, 40466, 20684, 9563],
+                            backgroundColor: [colors.purple, colors.sky, colors.teal, colors.orange],
+                            borderColor: '#1e293b'
+                        }]
+                    },
+                    options: getDoughnutOptions()
+                });
+            }
+            else if (tabElement.id === 'liquidate') {
+                 createChart('liquidatedPensionsTrendChart', {
+                    type: 'line',
+                    data: {
+                        labels: ['2021', '2022', '2023', '2024'],
+                        datasets: [
+                            { label: 'Totale', data: [5818, 6030, 5508, 5822], borderColor: colors.green, tension: 0.3, borderWidth: 3 },
+                            { label: 'Femmine', data: [3187, 3231, 2863, 2960], borderColor: colors.pink, tension: 0.3, borderDash: [5, 5] },
+                            { label: 'Maschi', data: [2631, 2799, 2645, 2862], borderColor: colors.sky, tension: 0.3, borderDash: [5, 5] }
+                        ]
+                    },
+                    options: getBaseChartOptions()
+                });
+
+                createChart('calculationSystemChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['2021', '2022', '2023', '2024'],
+                        datasets: [
+                            { label: 'Retributivo', data: [1561, 1453, 1301, 1262], backgroundColor: colors.purple, borderRadius: 5 },
+                            { label: 'Misto', data: [3228, 3240, 3022, 3275], backgroundColor: colors.sky, borderRadius: 5 },
+                            { label: 'Contributivo', data: [613, 821, 746, 793], backgroundColor: colors.teal, borderRadius: 5 }
+                        ]
+                    },
+                    options: getStackedChartOptions()
+                });
+                
+                createChart('liquidatedCompositionChart', {
+                     type: 'doughnut',
+                    data: {
+                        labels: ['Vecchiaia', 'Anzianità/Anticipate', 'Superstiti', 'Invalidità'],
+                        datasets: [{
+                            // Dati L1 aggregati da Tav 35 (nota 2)
+                            data: [1698, 1559, 1513, 560], 
+                            backgroundColor: [colors.pink, colors.sky, colors.purple, colors.orange],
+                            borderColor: '#1e293b'
+                        }]
+                    },
+                    options: getDoughnutOptions()
+                });
+
+                // Nuovo grafico L1 (Tav 36)
+                createChart('liquidatedAverageAmountChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['FPLD', 'Dip. Pubblici', 'Lavoratori Autonomi'],
+                        datasets: [
+                            // Dati 2024 da Tavola 36 (Importi Medi)
+                            { label: 'Femmine', data: [969.5, 1851.7, 791.2], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi', data: [1412.5, 2264.5, 1092.9], backgroundColor: colors.sky, borderRadius: 5 }
+                        ]
+                    },
+                    options: { ...getBaseChartOptions(), plugins: tooltipEuro }
+                });
+            }
+            else if (tabElement.id === 'tempi') {
+                createChart('performanceByFundChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Fondi Speciali', 'Gestione Pubblica', 'Gestione Privata'],
+                        datasets: [{
+                            label: '% liquidate entro 30 giorni',
+                            data: [98.0, 78.9, 76.9],
+                            backgroundColor: [colors.teal, colors.purple, colors.sky],
+                            borderRadius: 5
+                        }]
+                    },
+                    options: getHorizontalBarOptions()
+                });
+
+                 createChart('privateTimingDistributionChart', {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Entro 30 gg', '31-60 gg', '61-90 gg', 'Oltre 90 gg'],
+                        datasets: [{
+                            data: [76.9, 10.9, 4.9, 7.4],
+                            backgroundColor: [colors.green, colors.orange, colors.pink, colors.red],
+                            borderColor: '#1e293b'
+                        }]
+                    },
+                    options: { ...getDoughnutOptions(), plugins: { ...getDoughnutOptions().plugins, tooltip: {callbacks: {label: (c) => `${c.label}: ${c.raw}%`}}}}
+                });
+
+                createChart('benchmarkTimingChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Gestione Privata', 'Gestione Pubblica'],
+                        datasets: [
+                            { label: 'Pesaro e Urbino', data: [76.9, 78.9], backgroundColor: colors.teal, borderRadius: 5 },
+                            { label: 'Italia', data: [78.6, 82.8], backgroundColor: 'rgba(45, 212, 191, 0.4)', borderRadius: 5 }
+                        ]
+                    },
+                    options: { ...getBaseChartOptions(), scales: { ...getBaseChartOptions().scales, y: { ticks: { callback: (v) => v + '%' } } } }
+                });
+            }
+            else if (tabElement.id === 'anticipi') {
+                 createChart('anticipiTrendChart', {
+                    type: 'line',
+                    data: {
+                        labels: ['2022', '2023', '2024'],
+                        datasets: [
+                            { label: 'Opzione Donna', data: [218, 101, 39], borderColor: colors.pink, tension: 0.3},
+                            { label: 'Quota 102/103', data: [25, 127, 100], borderColor: colors.sky, tension: 0.3}
+                        ]
+                    },
+                    options: getBaseChartOptions()
+                });
+                
+                createChart('anticipiCompositionChart', {
+                     type: 'doughnut',
+                    data: {
+                        labels: ['APE Sociale', 'Quota 103', 'Lavoratori Precoci', 'Opzione Donna', 'Lavori Usuranti'],
+                        datasets: [{
+                            data: [145, 100, 71, 39, 1],
+                            backgroundColor: [colors.teal, colors.sky, colors.purple, colors.pink, colors.orange],
+                            borderColor: '#1e293b'
+                        }]
+                    },
+                    options: getDoughnutOptions()
+                });
+
+                createChart('quoteGenderChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Quota 100 (2021)', 'Quota 102 (2022)', 'Quota 103 (2023)', 'Quota 103 (2024)'],
+                        datasets: [
+                            { label: 'Femmine', data: [268, 11, 24, 18], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi', data: [425, 14, 103, 82], backgroundColor: colors.sky, borderRadius: 5 }
+                        ]
+                    },
+                    options: getStackedChartOptions()
+                });
+            }
+        }
+
+        // --- Funzione di Rendering per Sotto-Tab L2 ---
+        function renderSubChartsForTab(subTabElement) {
+            if (!subTabElement) return;
+
+            const tooltipEuro = { plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw.toFixed(2)} €` } } } };
+
+            // Sotto-Tab: Età Pensionamento (Tav 29)
+            if (subTabElement.id === 'eta-pensionamento') {
+                createChart('deepDiveAgeByProvinceChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Ancona', 'Ascoli Piceno', 'Fermo', 'Macerata', 'Pesaro e Urbino'],
+                        datasets: [
+                            // Dati 2024 da Tavola 29
+                            { label: 'Femmine', data: [64.4, 65.2, 65.4, 64.9, 65.0], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi', data: [63.1, 63.7, 63.2, 62.9, 63.2], backgroundColor: colors.sky, borderRadius: 5 }
+                        ]
+                    },
+                    options: getAgeChartOptions() // Opzioni specifiche per età
+                });
+                
+                createChart('deepDiveAgeBenchmarkChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Pesaro e Urbino', 'Regione Marche', 'Italia'],
+                        datasets: [
+                            // Dati 2024 da Tavola 29
+                            { label: 'Femmine', data: [65.0, 64.9, 65.2], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi', data: [63.2, 63.2, 63.8], backgroundColor: colors.sky, borderRadius: 5 }
+                        ]
+                    },
+                    options: getAgeChartOptions() // Opzioni specifiche per età
+                });
+            }
+            // Sotto-Tab: Composizione IVS (Tav 31)
+            else if (subTabElement.id === 'composizione-ivs') {
+                createChart('deepDiveIVSByGenderChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Anzianità/Anticipate', 'Vecchiaia', 'Invalidità', 'Superstiti'],
+                        datasets: [
+                            // Dati 2024 da Tavola 31 (aggregati)
+                            { label: 'Femmine', data: [15800, 20330, 4402, 21316], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi', data: [29764, 7627, 4567, 4317], backgroundColor: colors.sky, borderRadius: 5 }
+                        ]
+                    },
+                    options: getBaseChartOptions()
+                });
+
+                createChart('deepDiveIVSByFundChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['FPLD', 'Dip. Pubblici', 'Lav. Autonomi'],
+                        datasets: [
+                            // Dati 2024 da Tavola 31
+                            { label: 'Anzianità/Ant.', data: [14320, 12353, 17694], backgroundColor: colors.sky, borderRadius: 5 },
+                            { label: 'Vecchiaia', data: [10975, 2650, 12747], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Invalidità', data: [4656, 1726, 2390], backgroundColor: colors.orange, borderRadius: 5 },
+                            { label: 'Superstiti', data: [10515, 3955, 9438], backgroundColor: colors.purple, borderRadius: 5 }
+                        ]
+                    },
+                    options: getStackedChartOptions()
+                });
+            }
+            // Sotto-Tab: Analisi Importi (Gender Gap) (Tav 32)
+            else if (subTabElement.id === 'analisi-importi') {
+                createChart('deepDiveGapFPLDChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Anzianità/Ant.', 'Vecchiaia', 'Invalidità'],
+                        datasets: [
+                            // Dati 2024 FPLD da Tavola 32
+                            { label: 'Femmine', data: [1661.6, 717.1, 631.8], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi', data: [2301.9, 1321.0, 971.7], backgroundColor: colors.sky, borderRadius: 5 }
+                        ]
+                    },
+                    options: { ...getBaseChartOptions(), ...tooltipEuro }
+                });
+
+                createChart('deepDiveGapPublicChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Anzianità/Ant.', 'Vecchiaia', 'Invalidità'],
+                        datasets: [
+                            // Dati 2024 Dip. Pubblici da Tavola 32
+                            { label: 'Femmine', data: [2149.8, 1968.2, 1740.8], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi', data: [2621.1, 3074.9, 2549.9], backgroundColor: colors.sky, borderRadius: 5 }
+                        ]
+                    },
+                    options: { ...getBaseChartOptions(), ...tooltipEuro }
+                });
+
+                createChart('deepDiveBenchmarkImportiChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['FPLD', 'Dip. Pubblici', 'Lav. Autonomi'],
+                        datasets: [
+                            // Dati 2024 (Importo Medio) da Tavola 32 (Confronto PU vs IT)
+                            { label: 'Femmine (PU)', data: [905.5, 1875.4, 754.4], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi (PU)', data: [1789.1, 2511.7, 1330.4], backgroundColor: colors.sky, borderRadius: 5 },
+                            { label: 'Femmine (IT)', data: [1047.7, 1915.8, 772.9], backgroundColor: 'rgba(244, 114, 182, 0.5)', borderRadius: 5 },
+                            { label: 'Maschi (IT)', data: [1982.9, 2674.3, 1352.7], backgroundColor: 'rgba(56, 189, 248, 0.5)', borderRadius: 5 }
+                        ]
+                    },
+                    options: { ...getBaseChartOptions(), ...tooltipEuro }
+                });
+            }
+            // Sotto-Tab: Analisi Flussi Liquidate (Tav 33+34)
+            else if (subTabElement.id === 'flussi-liquidate') {
+                createChart('deepDiveLiquidateTrendTypeChart', {
+                    type: 'line',
+                    data: {
+                        labels: ['2021', '2022', '2023', '2024'],
+                        datasets: [
+                            // Dati aggregati da Tav 33 e 34
+                            { label: 'Anzianità/Ant.', data: [2165, 2133, 1839, 1767], borderColor: colors.sky, tension: 0.3, borderWidth: 2 },
+                            { label: 'Vecchiaia', data: [1401, 1806, 1678, 1926], borderColor: colors.pink, tension: 0.3, borderWidth: 2 },
+                            { label: 'Invalidità', data: [465, 389, 471, 569], borderColor: colors.orange, tension: 0.3, borderWidth: 2 },
+                            { label: 'Superstiti', data: [1787, 1702, 1520, 1560], borderColor: colors.purple, tension: 0.3, borderWidth: 2 }
+                        ]
+                    },
+                    options: getBaseChartOptions()
+                });
+
+                createChart('deepDiveLiquidateTrendFundChart', {
+                    type: 'line',
+                    data: {
+                        labels: ['2021', '2022', '2023', '2024'],
+                        datasets: [
+                            // Dati aggregati da Tav 33 e 34 (Solo gestioni principali)
+                            { label: 'FPLD', data: [2074, 2167, 2043, 2218], borderColor: colors.pink, tension: 0.3, borderWidth: 2 },
+                            { label: 'Dipendenti Pubblici', data: [1025, 901, 769, 739], borderColor: colors.teal, tension: 0.3, borderWidth: 2 },
+                            { label: 'Lavoratori Autonomi', data: [1987, 1997, 1840, 1922], borderColor: colors.purple, tension: 0.3, borderWidth: 2 }
+                        ]
+                    },
+                    options: getBaseChartOptions()
+                });
+            }
+            // Sotto-Tab: Sistemi di Calcolo (Tav 35)
+            else if (subTabElement.id === 'sistemi-calcolo') {
+                createChart('deepDiveCalcSystemFundChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['FPLD', 'Dip. Pubblici', 'Lav. Autonomi', 'Parasubordinati'],
+                        datasets: [
+                            // Dati 2024 da Tavola 35
+                            { label: 'Retributivo', data: [526, 167, 569, 0], backgroundColor: colors.purple, borderRadius: 5 },
+                            { label: 'Misto', data: [1419, 559, 1297, 0], backgroundColor: colors.sky, borderRadius: 5 },
+                            { label: 'Contributivo', data: [273, 13, 56, 451], backgroundColor: colors.teal, borderRadius: 5 }
+                        ]
+                    },
+                    options: getStackedChartOptions()
+                });
+
+                createChart('deepDiveCalcSystemTrendChart', {
+                    type: 'line',
+                    data: {
+                        labels: ['2021', '2022', '2023', '2024'],
+                        datasets: [
+                            // Dati Contributivo da Tavola 35
+                            { label: 'FPLD', data: [182, 246, 214, 273], borderColor: colors.pink, tension: 0.3, borderWidth: 2 },
+                            { label: 'Dip. Pubblici', data: [29, 30, 25, 13], borderColor: colors.teal, tension: 0.3, borderWidth: 2 },
+                            { label: 'Parasubordinati', data: [316, 449, 417, 451], borderColor: colors.orange, tension: 0.3, borderWidth: 2 },
+                            { label: 'Lav. Autonomi', data: [86, 96, 90, 56], borderColor: colors.purple, tension: 0.3, borderWidth: 2 }
+                        ]
+                    },
+                    options: getBaseChartOptions()
+                });
+            }
+            // Sotto-Tab: Analisi Importi Liquidate (Tav 36)
+            else if (subTabElement.id === 'analisi-importi-liquidate') {
+                createChart('deepDiveGapLiqFPLDChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Anzianità/Ant.', 'Vecchiaia', 'Invalidità'],
+                        datasets: [
+                            // Dati 2024 FPLD da Tavola 36
+                            { label: 'Femmine', data: [1607.5, 722.5, 605.2], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi', data: [2075.9, 1319.9, 882.9], backgroundColor: colors.sky, borderRadius: 5 }
+                        ]
+                    },
+                    options: { ...getBaseChartOptions(), ...tooltipEuro }
+                });
+
+                createChart('deepDiveGapLiqPublicChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['Anzianità/Ant.', 'Vecchiaia', 'Invalidità'],
+                        datasets: [
+                            // Dati 2024 Dip. Pubblici da Tavola 36
+                            { label: 'Femmine', data: [2245.3, 2064.7, 1310.7], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi', data: [2506.7, 3183.6, 1856.7], backgroundColor: colors.sky, borderRadius: 5 }
+                        ]
+                    },
+                    options: { ...getBaseChartOptions(), ...tooltipEuro }
+                });
+
+                createChart('deepDiveBenchmarkLiqImportiChart', {
+                    type: 'bar',
+                    data: {
+                        labels: ['FPLD', 'Dip. Pubblici', 'Lav. Autonomi'],
+                        datasets: [
+                            // Dati 2024 (Importo Medio) da Tavola 36 (Confronto PU vs IT)
+                            { label: 'Femmine (PU)', data: [969.5, 1851.7, 791.2], backgroundColor: colors.pink, borderRadius: 5 },
+                            { label: 'Maschi (PU)', data: [1412.5, 2264.5, 1092.9], backgroundColor: colors.sky, borderRadius: 5 },
+                            { label: 'Femmine (IT)', data: [1013.6, 1859.2, 787.3], backgroundColor: 'rgba(244, 114, 182, 0.5)', borderRadius: 5 },
+                            { label: 'Maschi (IT)', data: [1546.1, 2501.5, 1115.5], backgroundColor: 'rgba(56, 189, 248, 0.5)', borderRadius: 5 }
+                        ]
+                    },
+                    options: { ...getBaseChartOptions(), ...tooltipEuro }
+                });
+            }
+        }
+
+    });
+    </script>
+</body>
+</html>
+
+

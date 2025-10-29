@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mercato del Lavoro - Pesaro e Urbino</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        .chart-container {
+            position: relative;
+            height: 40vh;
+            width: 100%;
+        }
+
+        .tab-content, .sub-tab-content { display: none; }
+        .tab-content.active, .sub-tab-content.active { display: block; }
+
+        .tab-btn {
+            position: relative;
+            color: #94a3b8;
+            transition: color 0.2s ease-in-out;
+            padding-bottom: 8px;
+        }
+        .tab-btn:hover { color: #f8fafc; }
+        .tab-btn.active {
+            color: #4ade80; /* Verde per la nuova palette */
+            font-weight: 600;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background-color: #4ade80;
+            border-radius: 2px;
+        }
+
+        .sub-tab-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            color: #94a3b8;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            border: 2px solid transparent;
+        }
+        .sub-tab-btn:hover {
+            color: #e2e8f0;
+            background-color: #334155;
+        }
+        .sub-tab-btn.active {
+            color: #f0fdf4;
+            background-color: #166534; /* Verde scuro per tab nidificato */
+            border-color: #22c55e;
+            font-weight: 600;
+        }
+
+        .card {
+            background-color: #1e293b;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        
+        .card-accent {
+             border-top: 4px solid #4ade80;
+        }
+
+        .zoomable { cursor: zoom-in; }
+        
+        #modal-overlay { transition: opacity 0.3s ease-in-out; }
+        
+        .card.zoomed {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 90vw;
+            max-width: 1200px; /* Aumentato per grafici larghi */
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50"></div>
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white">Mercato del Lavoro</h1>
+            <p class="text-lg text-slate-400 mt-1">Provincia di Pesaro e Urbino (Dati 2023-2024)</p>
+        </header>
+
+        <!-- Schede KPI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Tasso di Occupazione</h3>
+                <p class="text-4xl font-bold text-white mt-2">70,1%</p>
+                <p class="text-sm text-slate-500 mt-1">Popolazione 15-64 anni (2024)</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Tasso di Disoccupazione</h3>
+                <p class="text-4xl font-bold text-green-400 mt-2">3,7%</p>
+                <p class="text-sm text-slate-500 mt-1">Popolazione 15-74 anni (2024)</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Lavoratori Totali</h3>
+                <p class="text-4xl font-bold text-white mt-2">173.233</p>
+                <p class="text-sm text-slate-500 mt-1">Dato aggiornato al 2023</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Incidenza Part-Time (Donne)</h3>
+                <p class="text-4xl font-bold text-white mt-2">48,1%</p>
+                <p class="text-sm text-slate-500 mt-1">Sulle dipendenti private (2023)</p>
+            </div>
+        </div>
+
+        <!-- Tab Buttons -->
+        <div id="tabs" class="flex flex-wrap justify-center gap-8 mb-6 border-b border-slate-700">
+            <button class="tab-btn active" data-tab="occupazione">Occupazione e Struttura</button>
+            <button class="tab-btn" data-tab="flussi">Flussi e Contratti</button>
+            <button class="tab-btn" data-tab="approfondimenti">Approfondimenti</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tab-contents" class="mt-8">
+            <!-- Occupazione e Struttura -->
+            <div id="occupazione" class="tab-content active space-y-6">
+                <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Indicatori del Mercato del Lavoro (2022-2024)</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>Il <strong class="text-green-400">tasso di occupazione</strong> provinciale (70,1%) è costantemente superiore alla media regionale e nazionale. <a href="#" class="deep-dive-link text-green-400 hover:text-green-300 font-semibold" data-target-tab="approfondimenti" data-target-subtab="dettaglio-tassi-occupazione">L'analisi per età</a> è negli Approfondimenti.</li>
+                        <li>Il <strong class="text-green-400">tasso di disoccupazione</strong> (3,7%) è in netto calo nel 2024 e si attesta su valori significativamente inferiori rispetto a Marche e Italia. <a href="#" class="deep-dive-link text-green-400 hover:text-green-300 font-semibold" data-target-tab="approfondimenti" data-target-subtab="dettaglio-tassi-disoccupazione">L'analisi per età</a> è negli Approfondimenti.</li>
+                        <li>Il <strong class="text-slate-100">tasso di inattività</strong> (27,4%) è anch'esso più basso, indicando una maggiore partecipazione al mercato del lavoro. <a href="#" class="deep-dive-link text-green-400 hover:text-green-300 font-semibold" data-target-tab="approfondimenti" data-target-subtab="dettaglio-tassi-inattivita">L'analisi per età</a> è negli Approfondimenti.</li>
+                    </ul>
+                    <div class="chart-container" style="height: 50vh;"><canvas id="mainIndicatorsChart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Composizione Lavoratori per Posizione (2023)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>La struttura occupazionale è dominata dal <strong class="text-sky-400">lavoro dipendente</strong> (138.925), che rappresenta quasi 4 lavoratori su 5.</li>
+                            <li>Il <strong class="text-teal-400">lavoro autonomo</strong> (Commercianti, Artigiani) costituisce uno zoccolo duro dell'economia locale (14%).</li>
+                            <li>Un'analisi di dettaglio per <strong class="text-slate-100">genere e nazionalità</strong> è disponibile nella sezione <a href="#" class="deep-dive-link text-green-400 hover:text-green-300 font-semibold" data-target-tab="approfondimenti" data-target-subtab="composizione-lavoro">Approfondimenti</a>.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="workersCompositionChart"></canvas></div>
+                    </div>
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Divario Retributivo di Genere (€/giorno, 2023)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Emerge un <strong class="text-red-400">gender pay gap</strong> strutturale: la retribuzione media maschile è superiore in tutti i principali settori.</li>
+                            <li>Il divario è più forte nel <strong class="text-pink-400">manifatturiero</strong> (circa €24 in più per gli uomini) e nel <strong class="text-pink-400">commercio</strong> (€21 in più).</li>
+                            <li>Questo dato è <strong class="text-slate-100">correlato alla forte incidenza del part-time femminile</strong>; l'<a href="#" class="deep-dive-link text-green-400 hover:text-green-300 font-semibold" data-target-tab="approfondimenti" data-target-subtab="analisi-retributiva">analisi retributiva dettagliata</a> è negli Approfondimenti.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="genderPayGapChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Flussi e Contratti -->
+            <div id="flussi" class="tab-content space-y-6">
+                <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Tipologie Contrattuali nelle Assunzioni (2023 vs 2024)</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>Si osserva una <strong class="text-red-400">frenata delle assunzioni stabili</strong>: i T. Indeterminati (-10,3%) e la Somministrazione (-11,8%) sono in netto calo nel 2024.</li>
+                        <li>In compenso, <strong class="text-green-400">crescono le forme più flessibili</strong> come l'Intermittente (+9,4%) e lo Stagionale (+4,7%).</li>
+                        <li>La sezione <a href="#" class="deep-dive-link text-green-400 hover:text-green-300 font-semibold" data-target-tab="approfondimenti" data-target-subtab="dinamiche-assunzioni">Approfondimenti</a> scompone questo trend <strong class="text-slate-100">per nazionalità</strong>.</li>
+                    </ul>
+                    <div class="chart-container" style="height: 50vh;"><canvas id="hiresByContractChart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Saldo Assunzioni/Cessazioni per Contratto (2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Questo grafico mostra una <strong class="text-red-400">perdita netta di lavoro stabile</strong> nel 2024 (-1.158 posti a T. Indeterminato).</li>
+                            <li>La <strong class="text-green-400">crescita occupazionale è trainata esclusivamente dal T. Determinato</strong> (+3.979), che compensa le perdite.</li>
+                            <li>Il saldo 2024 (+852) è <strong class="text-slate-100">positivo ma in forte rallentamento</strong>: l'analisi <a href="#" class="deep-dive-link text-green-400 hover:text-green-300 font-semibold" data-target-tab="approfondimenti" data-target-subtab="flussi-saldo">Approfondimenti</a> fornisce il <strong class="text-slate-100">confronto con il saldo 2023</strong>.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="hiresTerminationsBalanceChart"></canvas></div>
+                    </div>
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Lavoro Part-Time per Genere (Dipendenti, 2023)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Il dato chiave è la <strong class="text-pink-400">spaccatura di genere</strong>: l'incidenza femminile (48,1%) è <strong class="text-red-400">4 volte superiore</strong> a quella maschile (11,5%).</li>
+                            <li>Quasi <strong class="text-pink-400">una dipendente su due</strong> lavora a tempo parziale, quota superiore alle medie regionali e nazionali.</li>
+                            <li>L'<a href="#" class="deep-dive-link text-green-400 hover:text-green-300 font-semibold" data-target-tab="approfondimenti" data-target-subtab="dinamiche-assunzioni">analisi negli Approfondimenti</a> mostra la <strong class="text-slate-100">distribuzione per fascia d'età</strong> di questo fenomeno.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="partTimeIncidenceChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Approfondimenti -->
+            <div id="approfondimenti" class="tab-content space-y-6">
+                <!-- Sotto-navigazione per Approfondimenti -->
+                <div id="approfondimenti-tabs" class="flex flex-wrap justify-start gap-2 mb-6 p-3 bg-slate-800 rounded-lg">
+                    <button class="sub-tab-btn active" data-tab="composizione-lavoro">Composizione Forza Lavoro</button>
+                    <button class="sub-tab-btn" data-tab="dinamiche-assunzioni">Dinamiche Assunzioni</button>
+                    <button class="sub-tab-btn" data-tab="flussi-saldo">Flussi e Saldo Contrattuale</button>
+                    <button class="sub-tab-btn" data-tab="analisi-retributiva">Analisi Retributiva</button>
+                    <button class="sub-tab-btn" data-tab="dettaglio-tassi-occupazione">Dettaglio Tassi Occupazione</button>
+                    <button class="sub-tab-btn" data-tab="dettaglio-tassi-disoccupazione">Dettaglio Tassi Disoccupazione</button>
+                    <button class="sub-tab-btn" data-tab="dettaglio-tassi-inattivita">Dettaglio Tasso Inattività</button>
+                </div>
+                
+                <!-- Sotto-contenuti per Approfondimenti -->
+                <div id="approfondimenti-contents">
+                    
+                    <!-- Composizione Forza Lavoro (ex Tav. 7) -->
+                    <div id="composizione-lavoro" class="sub-tab-content active space-y-6">
+                        <div class="card card-accent"> <!-- RIMOSSO ZOOMABLE -->
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Approfondimento: Composizione Forza Lavoro (2023)</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="card zoomable"> <!-- AGGIUNTO CARD e ZOOMABLE -->
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Lavoratori per Nazionalità (Totale)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>La forza lavoro è composta per l'<strong class="text-sky-400">87,8%</strong> da lavoratori Italiani/Comunitari.</li>
+                                        <li>La componente <strong class="text-teal-400">Extracomunitaria</strong> (12,2%) è significativa e concentrata in specifici settori.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 35vh;"><canvas id="workersByNationalityChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable"> <!-- AGGIUNTO CARD e ZOOMABLE -->
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Composizione Genere per Nazionalità</h4>
+                                     <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>La componente <strong class="text-pink-400">Femminile</strong> è <strong class="text-red-400">maggioritaria (52%) tra i Comunitari</strong>.</li>
+                                        <li>Tra gli <strong class="text-teal-400">Extracomunitari</strong>, invece, la forza lavoro è composta prevalentemente da <strong class="text-sky-400">Uomini (61,2%)</strong>.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 35vh;"><canvas id="genderByNationalityChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable"> <!-- AGGIUNTO CARD e ZOOMABLE -->
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Dettaglio Lavoratori Dipendenti (per Nazionalità)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Il <strong class="text-pink-400">lavoro domestico</strong> è quasi equamente diviso tra Comunitari ed Extracomunitari.</li>
+                                        <li>Nel settore <strong class="text-sky-400">privato non domestico</strong>, la componente Extracomunitaria (13,7%) è più alta di quella nel Pubblico (0,6%).</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="dipendentiDetailChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable"> <!-- AGGIUNTO CARD e ZOOMABLE -->
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Lavoratori Autonomi (per Nazionalità)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Il lavoro autonomo (Artigiani, Commercianti) è quasi <strong class="text-sky-400">esclusivamente appannaggio di lavoratori Comunitari</strong>.</li>
+                                        <li>La componente Extracomunitaria è <strong class="text-teal-400">sotto l'8%</strong> sia tra gli Artigiani che tra i Commercianti.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="autonomiDetailChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CORREZIONE: INIZIO BLOCCHI MANCANTI -->
+                    
+                    <!-- Dinamiche Assunzioni (ex Tav. 8) -->
+                    <div id="dinamiche-assunzioni" class="sub-tab-content space-y-6">
+                        <div class="card card-accent">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Approfondimento: Dinamiche delle Assunzioni (2023 vs 2024)</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Variazione Assunzioni per Nazionalità (2024 vs 2023)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Le assunzioni totali calano del <strong class="text-red-400">-1,7%</strong>.</li>
+                                        <li>Il calo è trainato dalla <strong class="text-red-400">componente italiana (-2,4%)</strong>, mentre le assunzioni di <strong class="text-green-400">stranieri sono in leggera crescita (+1,2%)</strong>.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 35vh;"><canvas id="hiresVariationByNationalityChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Composizione Assunzioni per Genere (2024)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Gli <strong class="text-sky-400">uomini</strong> prevalgono nelle assunzioni a T. Indeterminato e Determinato.</li>
+                                        <li>Le <strong class="text-pink-400">donne</strong> sono <strong class="text-pink-400">maggioritarie</strong> nei contratti Stagionali e Intermittenti, legati a turismo e servizi.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 35vh;"><canvas id="hiresCompositionByGenderChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Trend Assunzioni Part-Time per Genere (2022-2024)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Le assunzioni part-time <strong class="text-pink-400">femminili sono quasi il doppio</strong> di quelle maschili.</li>
+                                        <li>Si nota un <strong class="text-red-400">calo costante</strong> delle assunzioni part-time femminili negli ultimi 3 anni, mentre quelle <strong class="text-green-400">maschili crescono</strong> nel 2024.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="partTimeTrendByGenderChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Incidenza Part-Time per Età (Sul tot. assunzioni, 2024)</h4>
+                                     <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>L'incidenza del part-time è <strong class="text-sky-400">massima (41,9%) nella fascia giovane (fino a 29 anni)</strong>.</li>
+                                        <li>Diminuisce nelle fasce d'età centrali per poi <strong class="text-orange-400">crollare (21,2%) negli over 51</strong>, dove prevale il lavoro full-time.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="partTimeIncidenceByAgeChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flussi e Saldo Contrattuale (ex Tav. 9-11) -->
+                    <div id="flussi-saldo" class="sub-tab-content space-y-6">
+                        <div class="card card-accent">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Approfondimento: Flussi e Saldo Contrattuale (2023 vs 2024)</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Confronto Saldo Netto Totale (2023 vs 2024)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Evidente <strong class="text-red-400">rallentamento della crescita occupazionale</strong> netta.</li>
+                                        <li>Il saldo 2024 (<strong class="text-orange-400">+852</strong>) è <strong class="text-red-400">quasi 10 volte inferiore</strong> a quello del 2023 (<strong class="text-green-400">+8.856</strong>), indicando una forte contrazione.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 35vh;"><canvas id="saldoCompareChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Composizione Saldo Netto 2024 per Contratto</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Il saldo positivo è <strong class="text-green-400">interamente dovuto al Tempo Determinato (+3.979)</strong>.</li>
+                                        <li>Si registra una <strong class="text-red-400">perdita netta di 1.158 posti a Tempo Indeterminato</strong>, mostrando una precarizzazione del saldo.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 35vh;"><canvas id="saldoComposition2024Chart"></canvas></div>
+                                </div>
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Cessazioni 2024 per Nazionalità</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Le cessazioni <strong class="text-sky-400">italiane (83,1%)</strong> sono proporzionali alla loro quota di occupati (87,8%).</li>
+                                        <li>La quota di cessazioni di <strong class="text-teal-400">stranieri (16,9%)</strong> è leggermente superiore alla loro quota di occupati (12,2%).</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="terminationsByNationalityChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Cessazioni 2024 per Genere</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Le cessazioni sono <strong class="text-sky-400">numericamente superiori per gli Uomini (57,3%)</strong> rispetto alle Donne (42,7%).</li>
+                                        <li>Questo riflette la <strong class="text-slate-100">maggiore presenza maschile</strong> nella forza lavoro totale (55,3%).</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="terminationsByGenderChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Analisi Retributiva (ex Tav. 10) -->
+                    <div id="analisi-retributiva" class="sub-tab-content space-y-6">
+                         <div class="card card-accent">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Approfondimento: Analisi Retributiva (2023)</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Retribuzione Media Privati (PU vs Marche vs Italia)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>La retribuzione media maschile (<strong class="text-sky-400">€98,6</strong>) è <strong class="text-green-400">superiore alla media Marchigiana</strong> (€96,2).</li>
+                                        <li>Quella femminile (<strong class="text-pink-400">€70,5</strong>) è <strong class="text-red-400">inferiore sia alla media marchigiana che italiana</strong>, accentuando il gap provinciale.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="retribuzioneMediaCompareChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Retribuzione Media Dipendenti Pubblici (PU)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Il <strong class="text-green-400">Servizio Sanitario</strong> e <strong class="text-green-400">Università</strong> mostrano i divari di genere più elevati (oltre €30).</li>
+                                        <li>Nella <strong class="text-sky-400">Scuola</strong>, le retribuzioni tra uomini e donne sono <strong class="text-sky-400">quasi allineate</strong>.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="retribuzionePubblicoChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable lg:col-span-2"> <!-- Grafico largo -->
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Divario Retributivo (Uomo-Donna) per Settore Privato (PU)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Il divario <strong class="text-red-400">supera i 40€ giornalieri</strong> in settori ad alta qualifica come <strong class="text-orange-400">Finanza</strong> e <strong class="text-orange-400">Energia</strong>.</li>
+                                        <li>È molto marcato anche in <strong class="text-orange-400">Attività Professionali</strong> e <strong class="text-orange-400">Servizi di Informazione</strong>.</li>
+                                        <li>Il divario è <strong class="text-green-400">minimo (sotto i 10€)</strong> solo in <strong class="text-green-400">Istruzione</strong>, <strong class="text-green-400">Trasporti</strong> e <strong class="text-green-400">Servizi alloggio</strong> (ristorazione).</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 60vh;"><canvas id="retribuzionePrivatoGapChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dettaglio Tassi Occupazione (Tav. 12) -->
+                    <div id="dettaglio-tassi-occupazione" class="sub-tab-content space-y-6">
+                        <div class="card card-accent">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Approfondimento: Dettaglio Tassi Occupazione (2024)</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Tasso Occupazione per Età e Genere (PU, 2024)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>I tassi di occupazione sono <strong class="text-green-400">molto elevati nelle fasce centrali (35-49)</strong>, superando il 90% per gli uomini e l'82% per le donne.</li>
+                                        <li>Il divario di genere è <strong class="text-red-400">massimo (12,4%) nella fascia 25-34</strong>, spesso legata alla genitorialità.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="tassiOccupazioneEtaGenereChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Confronto Tasso Occupazione (PU vs Italia, 2024)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>La performance provinciale è <strong class="text-green-400">nettamente migliore della media nazionale</strong> in tutte le fasce, specialmente quelle <strong class="text-pink-400">femminili</strong>.</li>
+                                        <li>Il <strong class="text-green-400">divario positivo con l'Italia</strong> è <strong class="text-green-400">enorme (+15,4%)</strong> per le donne 35-49 e <strong class="text-green-400">+14%</strong> per le giovani 15-24.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="tassiOccupazioneConfrontoItaliaChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dettaglio Tassi Disoccupazione (Tav. 14) -->
+                    <div id="dettaglio-tassi-disoccupazione" class="sub-tab-content space-y-6">
+                        <div class="card card-accent">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Approfondimento: Dettaglio Tassi Disoccupazione (2024)</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Tasso Disoccupazione per Età e Genere (PU, 2024)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>La disoccupazione provinciale è <strong class="text-green-400">molto bassa nelle fasce adulte (35-74)</strong>, dove si attesta sotto il 3,2% per entrambi i generi.</li>
+                                        <li>Il tasso è <strong class="text-red-400">significativamente più alto per i giovani (15-24)</strong> e per la fascia <strong class="text-pink-400">femminile 25-34 (11,0%)</strong>, che rappresenta un'area di attenzione.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="tassiDisoccupazioneEtaGenereChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Confronto Tasso Disoccupazione (PU vs Italia, 2024)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>Pesaro e Urbino ha tassi di disoccupazione <strong class="text-green-400">molto inferiori alla media nazionale</strong> in quasi tutte le fasce d'età.</li>
+                                        <li>L'unica eccezione è la <strong class="text-red-400">fascia femminile 25-34</strong>, dove il tasso provinciale (<strong class="text-red-400">11,0%</strong>) è superiore a quello nazionale (10,0%).</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="tassiDisoccupazioneConfrontoItaliaChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CORREZIONE: FINE BLOCCHI MANCANTI -->
+
+                    <!-- Dettaglio Tasso Inattività (Tav. 16) -->
+                    <div id="dettaglio-tassi-inattivita" class="sub-tab-content space-y-6">
+                        <div class="card card-accent">
+                            <h3 class="font-bold text-xl text-slate-200 mb-4">Approfondimento: Dettaglio Tasso Inattività (2024)</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Tasso Inattività per Età e Genere (PU, 2024)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>L'inattività è <strong class="text-orange-400">molto alta (oltre 65%) per i 15-24enni</strong>, in linea con i percorsi di studio.</li>
+                                        <li>Nelle fasce centrali (<strong class="text-green-400">25-49</strong>), l'inattività maschile è <strong class="text-green-400">bassissima (sotto il 13,3%)</strong>.</li>
+                                        <li>Il <strong class="text-pink-400">tasso femminile 25-34 (21,0%)</strong>, seppur ottimo, è 1,5 volte quello maschile, indicando una potenziale maggiore dedizione alla cura familiare.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="tassiInattivitaEtaGenereChart"></canvas></div>
+                                </div>
+                                <div class="card zoomable">
+                                    <h4 class="font-semibold text-lg text-slate-300 mb-2">Confronto Tasso Inattività (PU vs Italia, 2024)</h4>
+                                    <ul class="list-disc list-inside text-slate-400 space-y-1 mb-4 text-sm">
+                                        <li>La provincia <strong class="text-green-400">sovraperforma nettamente la media nazionale</strong> in termini di partecipazione al lavoro (inattività inferiore).</li>
+                                        <li>Il <strong class="text-green-400">vantaggio è enorme nelle fasce femminili</strong>: <strong class="text-green-400">-11,4%</strong> (25-34), <strong class="text-green-400">-12,5%</strong> (35-49) e <strong class="text-green-400">-9,9%</strong> (50-64) rispetto all'Italia.</li>
+                                    </ul>
+                                    <div class="chart-container" style="height: 40vh;"><canvas id="tassiInattivitaConfrontoItaliaChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chartInstances = new Map();
+        const colors = { 
+            orange: '#fb923c', 
+            sky: '#38bdf8', 
+            teal: '#2dd4bf', 
+            pink: '#f472b6', 
+            red: '#f87171', 
+            purple: '#c084fc', 
+            green: '#4ade80',
+            slate: '#94a3b8'
+        };
+
+        // --- GESTIONE TAB PRINCIPALI ---
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // --- GESTIONE SOTTO-TAB (APPROFONDIMENTI) ---
+        const subTabs = document.querySelectorAll('.sub-tab-btn');
+        const subContents = document.querySelectorAll('.sub-tab-content');
+        subTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                subTabs.forEach(t => t.classList.remove('active'));
+                subContents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // --- GESTIONE ZOOM CARD ---
+        const overlay = document.getElementById('modal-overlay');
+        function unzoom() {
+            document.querySelector('.card.zoomed')?.classList.remove('zoomed');
+            overlay.classList.add('hidden');
+        }
+        document.querySelectorAll('.zoomable').forEach(card => {
+            card.addEventListener('click', (event) => {
+                // Non attivare lo zoom se si clicca su un link o un bottone
+                if (event.target.closest('canvas, .filter-btn, button, a')) return;
+                const isZoomed = card.classList.contains('zoomed');
+                unzoom();
+                if (!isZoomed) {
+                    card.classList.add('zoomed');
+                    overlay.classList.remove('hidden');
+                }
+            });
+        });
+        overlay.addEventListener('click', unzoom);
+
+        // --- GESTIONE LINK APPROFONDIMENTI (NUOVO) ---
+        const deepDiveLinks = document.querySelectorAll('.deep-dive-link');
+        deepDiveLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetTabId = this.dataset.targetTab;
+                const targetSubTabId = this.dataset.targetSubtab;
+
+                // 1. Trova e clicca il tab principale
+                const mainTabButton = document.querySelector(`.tab-btn[data-tab="${targetTabId}"]`);
+                if (mainTabButton) {
+                    mainTabButton.click();
+                }
+
+                // 2. Trova e clicca il sotto-tab
+                const subTabButton = document.querySelector(`.sub-tab-btn[data-tab="${targetSubTabId}"]`);
+                if (subTabButton) {
+                    subTabButton.click();
+                }
+
+                // 3. Scrolla alla barra dei sotto-tab per far capire cosa è successo
+                const subTabNav = document.getElementById('approfondimenti-tabs');
+                if (subTabNav) {
+                    subTabNav.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // --- IMPOSTAZIONI GRAFICI ---
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#94a3b8';
+        const commonOptions = { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { position: 'bottom', labels: { color: '#cbd5e1' } } 
+            }, 
+            scales: { 
+                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }, 
+                x: { grid: { display: false }, ticks: { color: '#94a3b8' } } 
+            } 
+        };
+        
+        const commonOptionsHorizontal = {
+            ...commonOptions,
+            indexAxis: 'y',
+            scales: {
+                x: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } },
+                y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+            }
+        };
+
+        // --- NUOVA OPZIONE PER GRAFICI ORIZZONTALI CON VALORI NEGATIVI ---
+        const commonOptionsHorizontalNegative = {
+            ...commonOptions,
+            indexAxis: 'y',
+            scales: {
+                x: { beginAtZero: false, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }, // Non forza l'inizio a zero
+                y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+            }
+        };
+
+        function createChart(canvasId, config) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            // Distruggi il grafico esistente se presente
+            if (chartInstances.has(canvasId)) {
+                chartInstances.get(canvasId).destroy();
+            }
+            const chart = new Chart(canvas, config);
+            chartInstances.set(canvasId, chart); // Salva per ID
+            return chart;
+        }
+
+        // --- SEZIONE: OCCUPAZIONE E STRUTTURA ---
+        createChart('mainIndicatorsChart', {
+            type: 'line',
+            data: {
+                labels: ['2022', '2023', '2024'],
+                datasets: [
+                    { label: 'Tasso Occupazione PU', data: [69.6, 69.2, 70.1], borderColor: colors.green, tension: 0.3, borderWidth: 3 },
+                    { label: 'Tasso Disoccupazione PU', data: [4.9, 5.2, 3.7], borderColor: colors.orange, tension: 0.3, borderWidth: 3 },
+                    { label: 'Tasso Inattività PU', data: [26.8, 26.9, 27.4], borderColor: colors.purple, tension: 0.3, borderWidth: 3 },
+                    { label: 'Tasso Occupazione Italia', data: [60.1, 61.5, 62.2], borderColor: colors.green, tension: 0.3, borderDash: [5, 5], borderWidth: 1.5 },
+                    { label: 'Tasso Disoccupazione Italia', data: [8.1, 7.7, 6.5], borderColor: colors.orange, tension: 0.3, borderDash: [5, 5], borderWidth: 1.5 },
+                    { label: 'Tasso Inattività Italia', data: [34.5, 33.3, 33.4], borderColor: colors.purple, tension: 0.3, borderDash: [5, 5], borderWidth: 1.5 }
+                ]
+            },
+            options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` } } } }
+        });
+        
+        createChart('workersCompositionChart', {
+            type: 'bar',
+            data: {
+                labels: ['Dipendenti', 'Commercianti', 'Artigiani', 'Gest. Separata', 'Domestici', 'Agricoli Autonomi'],
+                datasets: [{
+                    label: 'Numero Lavoratori (2023)',
+                    data: [138925, 12217, 11987, 7149, 4868, 2744],
+                    backgroundColor: [colors.sky, colors.teal, colors.purple, colors.pink, colors.orange, colors.green],
+                    borderRadius: 5
+                }]
+            },
+            options: { ...commonOptionsHorizontal, plugins: { legend: { display: false } } }
+        });
+        
+        createChart('genderPayGapChart', {
+            type: 'bar',
+            data: {
+                labels: ['Manifatturiero', 'Commercio', 'Alloggio/Ristorazione', 'Sanità', 'Costruzioni'],
+                datasets: [
+                    { label: 'Femmine', data: [78.1, 67.9, 51.3, 58.4, 68.1], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [102.6, 89.0, 60.6, 74.6, 90.5], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: commonOptions
+        });
+
+        // --- SEZIONE: FLUSSI E CONTRATTI ---
+        createChart('hiresByContractChart', {
+            type: 'bar',
+            data: {
+                labels: ['T. Indeterminato', 'T. Determinato', 'Stagionale', 'Somministrazione', 'Intermittente'],
+                datasets: [
+                    { label: 'Assunzioni 2023', data: [8613, 19258, 7251, 5716, 11106], backgroundColor: 'rgba(56, 189, 248, 0.6)', borderRadius: 5 },
+                    { label: 'Assunzioni 2024', data: [7727, 18388, 7595, 5043, 12153], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: commonOptions
+        });
+        
+        createChart('hiresTerminationsBalanceChart', {
+            type: 'bar',
+            data: {
+                labels: ['T. Indeterminato', 'T. Determinato', 'Stagionale', 'Somministrazione', 'Intermittente'],
+                datasets: [
+                    { label: 'Saldo 2024', data: [-1158, 3979, 34, -71, 313], backgroundColor: (ctx) => ctx.raw >= 0 ? colors.green : colors.red, borderRadius: 5 }
+                ]
+            },
+            options: {
+                ...commonOptions, 
+                plugins: { legend: { display: false } },
+                scales: {
+                    ...commonOptions.scales,
+                    y: { // CORREZIONE: Rimuove beginAtZero: true per permettere valori negativi
+                        ...commonOptions.scales.y,
+                        beginAtZero: false, // Permette di mostrare valori negativi
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
+                        ticks: { color: '#94a3b8' } 
+                    }
+                }
+            }
+        });
+
+        createChart('partTimeIncidenceChart', {
+            type: 'bar',
+            data: {
+                labels: ['Pesaro e Urbino', 'Marche', 'Italia'],
+                datasets: [
+                    { label: 'Donne', data: [48.1, 45.6, 44.1], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Uomini', data: [11.5, 12.9, 15.4], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` } } } }
+        });
+
+        // --- SEZIONE: APPROFONDIMENTI ---
+
+        // --- Sotto-Tab: Composizione Forza Lavoro ---
+        createChart('workersByNationalityChart', {
+            type: 'doughnut',
+            data: {
+                labels: ['Comunitari', 'Extracomunitari'],
+                datasets: [{
+                    data: [152133, 21100],
+                    backgroundColor: [colors.sky, colors.teal]
+                }]
+            },
+            options: {...commonOptions, plugins: {...commonOptions.plugins, tooltip: {callbacks: {label: (c) => `${c.label}: ${c.raw.toLocaleString('it-IT')}`}}}}
+        });
+
+        createChart('genderByNationalityChart', {
+            type: 'bar',
+            data: {
+                labels: ['Comunitari', 'Extracomunitari'],
+                datasets: [
+                    { label: 'Femmine', data: [67995, 8186], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [84138, 12914], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptions, scales: {x: {...commonOptions.scales.x, stacked: true}, y: {...commonOptions.scales.y, stacked: true}}}
+        });
+
+        createChart('dipendentiDetailChart', {
+            type: 'bar',
+            data: {
+                labels: ['Privati', 'Pubblici', 'Agricoli', 'Domestici'],
+                datasets: [
+                    { label: 'Comunitari', data: [95395, 20659, 1583, 2291], backgroundColor: colors.sky, borderRadius: 5 },
+                    { label: 'Extracomunitari', data: [15957, 129, 334, 2577], backgroundColor: colors.teal, borderRadius: 5 }
+                ]
+            },
+            options: commonOptionsHorizontal
+        });
+        
+        createChart('autonomiDetailChart', {
+            type: 'bar',
+            data: {
+                labels: ['Artigiani', 'Commercianti', 'Agricoli Autonomi', 'Gestione Separata'],
+                datasets: [
+                    { label: 'Comunitari', data: [11091, 11319, 2728, 6875], backgroundColor: colors.sky, borderRadius: 5 },
+                    { label: 'Extracomunitari', data: [896, 898, 16, 274], backgroundColor: colors.teal, borderRadius: 5 }
+                ]
+            },
+            options: commonOptionsHorizontal
+        });
+
+        // --- Sotto-Tab: Dinamiche Assunzioni ---
+        createChart('hiresVariationByNationalityChart', {
+            type: 'bar',
+            data: {
+                labels: ['Italiani', 'Stranieri', 'Totale'],
+                datasets: [{
+                    label: 'Variazione % Assunzioni (2024 vs 2023)',
+                    data: [-2.4, 1.2, -1.7],
+                    backgroundColor: (ctx) => ctx.raw >= 0 ? colors.green : colors.red,
+                    borderRadius: 5
+                }]
+            },
+            options: {...commonOptionsHorizontalNegative, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.raw}%` } } }}
+        });
+
+        createChart('hiresCompositionByGenderChart', {
+            type: 'bar',
+            data: {
+                labels: ['T. Indeterminato', 'T. Determinato', 'Stagionale', 'Somministrazione', 'Intermittente'],
+                datasets: [
+                    { label: 'Femmine', data: [2780, 7548, 3984, 1750, 6502], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [4947, 10840, 3611, 3293, 5651], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptions, scales: {x: {...commonOptions.scales.x, stacked: true}, y: {...commonOptions.scales.y, stacked: true}}}
+        });
+
+        createChart('partTimeTrendByGenderChart', {
+            type: 'line',
+            data: {
+                labels: ['2022', '2023', '2024'],
+                datasets: [
+                    { label: 'Femmine', data: [11134, 10720, 10593], borderColor: colors.pink, tension: 0.3, borderWidth: 3 },
+                    { label: 'Maschi', data: [6357, 6320, 6663], borderColor: colors.sky, tension: 0.3, borderWidth: 3 }
+                ]
+            },
+            options: commonOptions
+        });
+        
+        createChart('partTimeIncidenceByAgeChart', {
+            type: 'bar',
+            data: {
+                labels: ['Fino a 29', '30 - 50', '51 ed oltre'],
+                datasets: [{
+                    label: 'Incidenza % Ass. Part-Time (2024)',
+                    data: [41.9, 36.9, 21.2],
+                    backgroundColor: [colors.sky, colors.purple, colors.orange],
+                    borderRadius: 5
+                }]
+            },
+            options: {...commonOptions, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.raw}%` } } }}
+        });
+
+        // --- Sotto-Tab: Flussi e Saldo Contrattuale ---
+        const saldo2023 = [8613-6490, 19258-13170, 7251-7096, 5716-5626, 11106-10706]; // [2123, 6088, 155, 90, 400] -> Tot 8856? Dati tavola 9/10/11 non tornano con 5541.
+        // I dati delle tavole 9 e 10 danno un saldo 2023 di +8856. Il saldo 2024 è +852.
+        // Uso i dati aggregati calcolati dalle tavole.
+        const saldo_2023_totale = (8613+19258+7251+5716+11106) - (6490+13170+7096+5626+10706); // 8856
+        const saldo_2024_totale = (7727+18388+7595+5043+12153) - (8885+14409+7561+5114+11840); // 852
+        
+        createChart('saldoCompareChart', {
+            type: 'bar',
+            data: {
+                labels: ['Saldo Netto Totale'],
+                datasets: [
+                    { label: 'Saldo 2023', data: [saldo_2023_totale], backgroundColor: colors.green, borderRadius: 5 },
+                    { label: 'Saldo 2024', data: [saldo_2024_totale], backgroundColor: colors.orange, borderRadius: 5 }
+                ]
+            },
+            options: commonOptions
+        });
+
+        createChart('saldoComposition2024Chart', {
+            type: 'bar',
+            data: {
+                labels: ['T. Indeterminato', 'T. Determinato', 'Stagionale', 'Somministrazione', 'Intermittente'],
+                datasets: [{
+                    label: 'Saldo Netto 2024',
+                    data: [7727-8885, 18388-14409, 7595-7561, 5043-5114, 12153-11840], // [-1158, 3979, 34, -71, 313]
+                    backgroundColor: (ctx) => ctx.raw >= 0 ? colors.green : colors.red,
+                    borderRadius: 5
+                }]
+            },
+            options: {...commonOptionsHorizontalNegative, plugins: { legend: { display: false } } }
+        });
+
+        createChart('terminationsByNationalityChart', {
+            type: 'doughnut',
+            data: {
+                labels: ['Italiani', 'Stranieri'],
+                datasets: [{
+                    data: [39757, 8047], // Totale cessazioni 2024
+                    backgroundColor: [colors.sky, colors.teal]
+                }]
+            },
+            options: {...commonOptions, plugins: {...commonOptions.plugins, tooltip: {callbacks: {label: (c) => `${c.label}: ${c.raw.toLocaleString('it-IT')}`}}}}
+        });
+
+        createChart('terminationsByGenderChart', {
+            type: 'doughnut',
+            data: {
+                labels: ['Femmine', 'Maschi'],
+                datasets: [{
+                    data: [20410, 27394], // Totale cessazioni 2024
+                    backgroundColor: [colors.pink, colors.sky]
+                }]
+            },
+            options: {...commonOptions, plugins: {...commonOptions.plugins, tooltip: {callbacks: {label: (c) => `${c.label}: ${c.raw.toLocaleString('it-IT')}`}}}}
+        });
+        
+        // --- Sotto-Tab: Analisi Retributiva ---
+        createChart('retribuzioneMediaCompareChart', {
+            type: 'bar',
+            data: {
+                labels: ['Pesaro e Urbino', 'Marche', 'Italia'],
+                datasets: [
+                    { label: 'Femmine', data: [70.5, 71.3, 79.8], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [98.6, 96.2, 107.5], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptions, plugins: {...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: €${c.raw}` } } } }
+        });
+
+        createChart('retribuzionePubblicoChart', {
+            type: 'bar',
+            data: {
+                labels: ['Ammin. Locali', 'Scuola', 'Servizio Sanitario', 'Ammin. Centrali', 'Forze Armate', 'Università'],
+                datasets: [
+                    { label: 'Femmine', data: [95.9, 94.1, 119.9, 132.6, 136.1, 134.9], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [104.3, 97.6, 151.0, 150.4, 155.8, 164.1], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptionsHorizontal, plugins: {...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: €${c.raw}` } } } }
+        });
+        
+        // --- CORREZIONE BUG ORDINAMENTO GRAFICO DIVARIO ---
+        // 1. Creare i dati come array di oggetti {label, gap}
+        const gapData = [
+            { label: 'Attività finanziarie', gap: 178.0 - 129.5 },
+            { label: 'Fornitura energia', gap: 137.4 - 88.6 },
+            { label: 'Attività professionali', gap: 104.6 - 69.9 },
+            { label: 'Servizi informazione', gap: 110.7 - 76.0 },
+            { label: 'Attività immobiliari', gap: 103.8 - 70.5 },
+            { label: 'Attività artistiche', gap: 85.9 - 57.8 },
+            { label: 'Estrazione minerali', gap: 183.0 - 147.8 },
+            { label: 'Altre attività servizi', gap: 75.6 - 52.8 },
+            { label: 'Manifatturiero', gap: 102.6 - 78.1 },
+            { label: 'Costruzioni', gap: 90.5 - 68.1 },
+            { label: 'Commercio', gap: 89.0 - 67.9 },
+            { label: 'Sanità', gap: 74.6 - 58.4 },
+            { label: 'Noleggio/Serv. imprese', gap: 78.2 - 59.2 },
+            { label: 'Attività domestiche', gap: 54.4 - 42.6 },
+            { label: 'Servizi alloggio', gap: 60.6 - 51.3 },
+            { label: 'Forniture acqua', gap: 112.7 - 103.8 },
+            { label: 'Trasporto', gap: 94.6 - 88.1 },
+            { label: 'Istruzione', gap: 75.2 - 69.6 }
+        ];
+
+        // 2. Ordinare l'array di oggetti in base al divario (gap)
+        gapData.sort((a, b) => b.gap - a.gap);
+
+        // 3. Estrarre i label e i dati ordinati
+        const sortedGapLabels = gapData.map(d => d.label);
+        const sortedGapValues = gapData.map(d => d.gap);
+        
+        createChart('retribuzionePrivatoGapChart', {
+            type: 'bar',
+            data: {
+                labels: sortedGapLabels, // Usare i label ordinati
+                datasets: [{
+                    label: 'Divario Retributivo (M-F) in €',
+                    data: sortedGapValues, // Usare i dati ordinati
+                    backgroundColor: colors.orange,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                ...commonOptions,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (c) => `Divario: €${c.raw.toFixed(1)}` } }
+                },
+                scales: {
+                    ...commonOptionsHorizontal.scales,
+                    y: {
+                        ...commonOptionsHorizontal.scales.y,
+                        labels: sortedGapLabels // Assicura che anche l'asse usi i label corretti
+                    }
+                }
+            }
+        });
+
+        // --- Sotto-Tab: Dettaglio Tassi Occupazione ---
+        createChart('tassiOccupazioneEtaGenereChart', {
+            type: 'bar',
+            data: {
+                labels: ['15-24', '25-34', '35-49', '50-64'],
+                datasets: [
+                    { label: 'Femmine', data: [29.1, 70.2, 82.4, 64.8], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [30.4, 82.6, 90.9, 75.7], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptions, plugins: {...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` } } } }
+        });
+
+        createChart('tassiOccupazioneConfrontoItaliaChart', {
+            type: 'bar',
+            data: {
+                labels: ['F 15-24', 'F 25-34', 'F 35-49', 'F 50-64', 'M 15-24', 'M 25-34', 'M 35-49', 'M 50-64'],
+                datasets: [
+                    { label: 'Pesaro e Urbino', data: [29.1, 70.2, 82.4, 64.8, 30.4, 82.6, 90.9, 75.7], backgroundColor: colors.green, borderRadius: 5 },
+                    { label: 'Italia', data: [15.1, 60.8, 67.0, 54.1, 24.0, 76.2, 87.4, 75.8], backgroundColor: colors.slate, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptions, plugins: {...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` } } } }
+        });
+
+        // --- AGGIUNTA GRAFICI MANCANTI ---
+        // --- Sotto-Tab: Dettaglio Tassi Disoccupazione ---
+        createChart('tassiDisoccupazioneEtaGenereChart', {
+            type: 'bar',
+            data: {
+                labels: ['15-24', '25-34', '35-49', '50-74'],
+                datasets: [
+                    { label: 'Femmine', data: [8.9, 11.0, 2.4, 3.2], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [12.0, 4.7, 1.6, 1.6], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptions, plugins: {...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` } } } }
+        });
+
+        createChart('tassiDisoccupazioneConfrontoItaliaChart', {
+            type: 'bar',
+            data: {
+                labels: ['F 15-24', 'F 25-34', 'F 35-49', 'F 50-74', 'M 15-24', 'M 25-34', 'M 35-49', 'M 50-74'],
+                datasets: [
+                    { label: 'Pesaro e Urbino', data: [8.9, 11.0, 2.4, 3.2, 12.0, 4.7, 1.6, 1.6], backgroundColor: colors.green, borderRadius: 5 },
+                    { label: 'Italia', data: [22.2, 10.0, 6.9, 4.6, 19.2, 8.4, 4.8, 3.7], backgroundColor: colors.slate, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptions, plugins: {...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` } } } }
+        });
+
+
+        // --- Sotto-Tab: Dettaglio Tasso Inattività ---
+        createChart('tassiInattivitaEtaGenereChart', {
+            type: 'bar',
+            data: {
+                labels: ['15-24', '25-34', '35-49', '50-64'],
+                datasets: [
+                    { label: 'Femmine', data: [68.1, 21.0, 15.5, 33.4], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [65.4, 13.3, 7.6, 23.4], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptions, plugins: {...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` } } } }
+        });
+
+        createChart('tassiInattivitaConfrontoItaliaChart', {
+            type: 'bar',
+            data: {
+                labels: ['F 15-24', 'F 25-34', 'F 35-49', 'F 50-64', 'M 15-24', 'M 25-34', 'M 35-49', 'M 50-64'],
+                datasets: [
+                    { label: 'Pesaro e Urbino', data: [68.1, 21.0, 15.5, 33.4, 65.4, 13.3, 7.6, 23.4], backgroundColor: colors.green, borderRadius: 5 },
+                    { label: 'Italia', data: [80.6, 32.4, 28.0, 43.3, 70.3, 16.8, 8.2, 21.1], backgroundColor: colors.slate, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptions, plugins: {...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` } } } }
+        });
+
+
+    });
+    </script>
+</body>
+</html>
+
+
+
+
+
+

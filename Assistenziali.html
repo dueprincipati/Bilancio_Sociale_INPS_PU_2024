@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prestazioni Assistenziali e Sociali - Pesaro e Urbino</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        .chart-container {
+            position: relative;
+            height: 40vh;
+            width: 100%;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .sub-tab-content { display: none; }
+        .sub-tab-content.active { display: block; }
+
+        .tab-btn {
+            position: relative;
+            color: #94a3b8;
+            transition: color 0.2s ease-in-out;
+            padding-bottom: 8px;
+            font-weight: 500;
+        }
+        .tab-btn:hover { color: #f8fafc; }
+        .tab-btn.active {
+            color: #f472b6; /* Rosa/Fucsia per dashboard esistente */
+            font-weight: 600;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background-color: #f472b6;
+            border-radius: 2px;
+        }
+
+        /* Stile per il nuovo tab di approfondimento (Verde) */
+        .tab-btn[data-tab="approfondimenti"].active {
+            color: #4ade80; 
+        }
+        .tab-btn[data-tab="approfondimenti"].active::after {
+            background-color: #4ade80;
+        }
+        
+        /* Stili per i sotto-tab L2 */
+        .sub-tab-btn {
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.2s ease-in-out;
+            font-weight: 500;
+        }
+        .sub-tab-btn:hover {
+            background-color: #334155;
+            color: #f8fafc;
+        }
+        .sub-tab-btn.active {
+            background-color: #4ade80; /* Green accent */
+            color: #052e16; /* Dark green text per contrasto */
+            font-weight: 600;
+        }
+        
+        /* Stile per i link di deep-dive */
+        .deep-dive-link {
+            color: #4ade80; /* Green accent */
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border-bottom: 1px dashed #4ade80;
+        }
+        .deep-dive-link:hover {
+            color: #86efac;
+            border-bottom-style: solid;
+        }
+
+        .card {
+            background-color: #1e293b;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .zoomable { cursor: zoom-in; }
+        
+        #modal-overlay { transition: opacity 0.3s ease-in-out; }
+        
+        .card.zoomed {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 90vw;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50"></div>
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white">Prestazioni Assistenziali e Sociali</h1>
+            <p class="text-lg text-slate-400 mt-1">Provincia di Pesaro e Urbino (Dati 2023-2024)</p>
+        </header>
+
+        <!-- Schede KPI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Prestazioni Inv. Civile</h3>
+                <p class="text-4xl font-bold text-white mt-2">21.530</p>
+                <p class="text-sm text-slate-500 mt-1">Prestazioni vigenti 2024</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Nuclei Assegno Unico</h3>
+                <p class="text-4xl font-bold text-white mt-2">38.226</p>
+                <p class="text-sm text-slate-500 mt-1">Dato aggiornato al 2024</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Beneficiari ADI</h3>
+                <p class="text-4xl font-bold text-white mt-2">1.737</p>
+                <p class="text-sm text-slate-500 mt-1">Nuova misura 2024</p>
+            </div>
+             <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Tempo Medio Inv. Civile</h3>
+                <p class="text-4xl font-bold text-red-400 mt-2">162 gg</p>
+                <p class="text-sm text-slate-500 mt-1">Dato aggiornato al 2024</p>
+            </div>
+        </div>
+
+        <!-- Tab Buttons (L1) -->
+        <div id="tabs" class="flex flex-wrap justify-center gap-8 mb-6 border-b border-slate-700">
+            <button class="tab-btn active" data-tab="invalidita">Invalidità Civile</button>
+            <button class="tab-btn" data-tab="sostegno">Sostegno al Reddito</button>
+            <button class="tab-btn" data-tab="approfondimenti">Approfondimenti: Inclusione</button>
+        </div>
+
+        <!-- Tab Content (L1) -->
+        <div id="tab-contents" class="mt-8">
+            <!-- Invalidità Civile -->
+            <div id="invalidita" class="tab-content active space-y-6">
+                <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Prestazioni Vigenti per Genere e Tipologia (2024)</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>L'<strong class="text-sky-400">Indennità di Accompagnamento</strong> costituisce la maggioranza delle prestazioni (73,7%).</li>
+                        <li>In entrambe le categorie, le <strong class="text-pink-400">donne</strong> rappresentano la maggioranza dei beneficiari, in modo particolare per l'indennità di accompagnamento.</li>
+                        <li>(Dati da Tav. 45. Nessun approfondimento L2 disponibile poiché il grafico L1 mostra già tutti i dettagli).</li>
+                    </ul>
+                    <div class="chart-container" style="height: 50vh;"><canvas id="prestazioniVigentiChart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Andamento Liquidazioni (2021-2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Il numero totale di nuove prestazioni liquidate mostra una <strong class="text-slate-100">sostanziale stabilità</strong> negli ultimi 4 anni, con circa 3.500 nuove liquidazioni annue.</li>
+                            <li><a onclick="navigateToDeepDive('approfondimenti', 'inv-liquidazioni')" class="deep-dive-link">Approfondisci</a> il dettaglio per tipologia e il benchmark regionale.</li>
+                            <li><a onclick="navigateToDeepDive('approfondimenti', 'inv-domande')" class="deep-dive-link">Analizza</a> il rapporto tra domande presentate e accolte.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="liquidazioniTrendChart"></canvas></div>
+                    </div>
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Tempi Medi di Definizione (Giorni)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Nel 2024 si registra un <strong class="text-red-400">aumento dei tempi medi totali</strong> (162 gg vs 142 gg), dovuto all'allungamento della <strong class="text-orange-400">fase sanitaria</strong> (<a onclick="navigateToDeepDive('approfondimenti', 'inv-tempi')" class="deep-dive-link">vedi dettaglio</a>).</li>
+                            <li>I tempi provinciali sono in linea con la media nazionale ma superiori a quella regionale.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="tempiDefinizioneChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sostegno al Reddito -->
+            <div id="sostegno" class="tab-content space-y-6">
+                <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Transizione da RdC a ADI/SFL (Domande Accolte)</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>Il 2024 vede la sostituzione del Reddito di Cittadinanza con le nuove misure.</li>
+                        <li>Il numero di nuclei beneficiari dell'<strong class="text-sky-400">Assegno di Inclusione (ADI)</strong> (1.737) è superiore a quello dei beneficiari di RdC/PdC dell'anno precedente (942).</li>
+                        <li>Il <strong class="text-teal-400">Supporto per la Formazione e il Lavoro (SFL)</strong> si attesta su numeri più contenuti.</li>
+                        <li>Il <a onclick="navigateToDeepDive('approfondimenti', 'sostegno-liberta')" class="deep-dive-link">Reddito di Libertà</a> (altra misura di sostegno) mostra numeri molto contenuti (non inclusa in questo grafico).</li>
+                    </ul>
+                    <div class="chart-container" style="height: 50vh;"><canvas id="sostegnoRedditoChart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Nuclei Beneficiari Assegno Unico</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Il numero di nuclei che beneficiano dell'Assegno Unico è in <strong class="text-green-400">leggera crescita</strong> nel 2024.</li>
+                            <li>La misura raggiunge oltre <strong class="text-slate-100">38.000 famiglie</strong> nella provincia.</li>
+                             <li><a onclick="navigateToDeepDive('approfondimenti', 'sostegno-au')" class="deep-dive-link">Approfondisci</a> il benchmark regionale e la scomposizione "a domanda" vs "ex-RdC".</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="assegnoUnicoChart"></canvas></div>
+                    </div>
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Composizione Genere Domande RdC Accolte (2023)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Nel 2023, le domande di RdC/PdC accolte provenivano per il <strong class="text-pink-400">59,4% da donne</strong> e per il <strong class="text-sky-400">40,6% da uomini</strong>.</li>
+                            <li><a onclick="navigateToDeepDive('approfondimenti', 'sostegno-rdc')" class="deep-dive-link">Approfondisci</a> il confronto con le domande presentate e il benchmark regionale.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="rdcGenderChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NUOVO: Approfondimenti L2 -->
+            <div id="approfondimenti" class="tab-content space-y-6">
+                
+                <!-- Navigazione L2 (Sotto-Tab) -->
+                <div class="w-full bg-slate-800 rounded-lg p-2 mb-6 sticky top-2 z-40">
+                    <nav class="sub-tabs flex flex-wrap justify-center gap-2 md:gap-4">
+                        <button class="sub-tab-btn active" data-subtab="inv-liquidazioni">Inv. Civile: Liquidazioni</button>
+                        <button class="sub-tab-btn" data-subtab="inv-domande">Inv. Civile: Domande</button>
+                        <button class="sub-tab-btn" data-subtab="inv-tempi">Inv. Civile: Dettaglio Tempi</button>
+                        <button class="sub-tab-btn" data-subtab="sostegno-au">Sostegno: Assegno Unico</button>
+                        <button class="sub-tab-btn" data-subtab="sostegno-rdc">Sostegno: RdC Genere</button>
+                        <button class="sub-tab-btn" data-subtab="sostegno-liberta">Sostegno: Reddito Libertà</button>
+                    </nav>
+                </div>
+
+                <!-- Contenuti L2 -->
+                <div id="sub-tab-contents">
+                    
+                    <!-- L2: Inv. Civile: Liquidazioni -->
+                    <div id="inv-liquidazioni" class="sub-tab-content active space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Trend Liquidazioni per Tipologia (Tav. 46)</h3>
+                             <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Questo grafico scompone il dato L1 (solo Totale PU) per tipologia e aggiunge il benchmark regionale.</li>
+                                <li>Il calo delle liquidazioni provinciali è guidato dalle <strong class="text-pink-400">Indennità (PU)</strong>, in calo dal 2021.</li>
+                                <li>Le <strong class="text-sky-400">Pensioni (PU)</strong> mostrano invece una lieve ma costante crescita.</li>
+                                <li>Il trend provinciale (calo Indennità) è <strong class="text-red-400">disallineato</strong> da quello regionale, che vede le Indennità (Marche) in crescita nel 2024.</li>
+                            </ul>
+                            <div class="chart-container" style="height: 50vh;"><canvas id="liquidazioniDetailChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- L2: Inv. Civile: Domande -->
+                    <div id="inv-domande" class="sub-tab-content space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Domande Presentate vs Accolte (Tav. 46)</h3>
+                             <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Dato anomalo nel 2023: le <strong class="text-teal-400">domande accolte (15.909)</strong> a PU sono state superiori alle <strong class="text-purple-400">presentate (15.764)</strong>, indicando probabile smaltimento di arretrati.</li>
+                                <li>Nel 2024, il tasso di accoglimento provinciale (14.487 su 16.109) è circa <strong class="text-white">89,9%</strong>.</li>
+                                <li>Il tasso di accoglimento regionale 2024 (73.172 su 74.189) è molto più alto, pari al <strong class="text-white">98,6%</strong>.</li>
+                            </ul>
+                            <div class="chart-container" style="height: 50vh;"><canvas id="domandeInvChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- L2: Inv. Civile: Dettaglio Tempi -->
+                    <div id="inv-tempi" class="sub-tab-content space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Dettaglio Tempi Medi per Fase (Tav. 47)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>L'aumento dei tempi totali provinciali nel 2024 (da 142 a 162 gg) è <strong class="text-red-400">interamente dovuto</strong> all'allungamento della <strong class="text-orange-400">Fase Sanitaria</strong> (da 123 a 142 gg).</li>
+                                <li>La Fase Amministrativa provinciale rimane stabile e virtuosa (<strong class="text-sky-400">~20 gg</strong>).</li>
+                                <li>La performance provinciale sulla Fase Sanitaria 2024 è <strong class="text-red-400">peggiore</strong> della media regionale (<strong class="text-orange-400">97 gg</strong>) e nazionale (<strong class="text-orange-400">125 gg</strong>).</li>
+                            </ul>
+                            <div class="chart-container" style="height: 50vh;"><canvas id="tempiDetailChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- L2: Sostegno: Assegno Unico -->
+                    <div id="sostegno-au" class="sub-tab-content space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Dettaglio Nuclei Assegno Unico (Tav. 50)</h3>
+                             <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Questo grafico scompone i dati L1, mostrando la <strong class="text-orange-400">quota di nuclei (764 a PU)</strong> che nel 2023 ricevevano l'AU d'ufficio come percettori di RdC.</li>
+                                <li>Tale quota si è <strong class="text-white">azzerata nel 2024</strong> con la fine del RdC, venendo assorbita dalle domande standard.</li>
+                                <li>La crescita dei nuclei "a domanda" provinciali (<strong class="text-green-400">+1.8%</strong>) è in linea con quella regionale (<strong class="text-green-400">+2.2%</strong>).</li>
+                            </ul>
+                            <div class="chart-container" style="height: 50vh;"><canvas id="auDetailChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- L2: Sostegno: RdC Genere -->
+                    <div id="sostegno-rdc" class="sub-tab-content space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Dettaglio RdC per Genere (Tav. 48)</h3>
+                             <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Il grafico L1 mostrava solo le *accolte* a PU. Qui vediamo il benchmark regionale e le *presentate*.</li>
+                                <li>Tasso di accoglimento <strong class="text-pink-400">Donne (PU)</strong> 2023: <strong class="text-white">51%</strong> (560 accolte su 1099 presentate).</li>
+                                <li>Tasso di accoglimento <strong class="text-sky-400">Uomini (PU)</strong> 2023: <strong class="text-white">53,3%</strong> (382 accolte su 716 presentate).</li>
+                                <li>Il *gender gap* (più domande da donne) è <strong class="text-pink-400">presente e marcato</strong> sia a livello provinciale che regionale.</li>
+                            </ul>
+                            <div class="chart-container" style="height: 50vh;"><canvas id="rdcGenderDetailChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- L2: Sostegno: Reddito Libertà -->
+                    <div id="sostegno-liberta" class="sub-tab-content space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Reddito di Libertà (Tav. 49)</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>Il Reddito di Libertà (per donne vittime di violenza) è una misura con <strong class="text-teal-400">numeri molto piccoli</strong> in provincia.</li>
+                                <li>Le domande presentate sono in <strong class="text-white">calo costante</strong> dal 2022.</li>
+                                <li>Nel 2023 e 2024 <strong class="text-red-400">non</strong> risultano domande accolte (Dato: "-").</li>
+                                <li>Il dato "accolte 2022" è coperto da privacy (Dato: "*").</li>
+                            </ul>
+                            <div class="chart-container" style="height: 50vh;"><canvas id="redditoLibertaChart"></canvas></div>
+                        </div>
+                    </div>
+
+                </div> <!-- fine sub-tab-contents -->
+            </div> <!-- fine approfondimenti -->
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chartInstances = new Map();
+        const colors = { orange: '#fb923c', sky: '#38bdf8', teal: '#2dd4bf', pink: '#f472b6', red: '#f87171', purple: '#c084fc', green: '#4ade80' };
+
+        // --- Gestione Tab L1 ---
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // --- Gestione Sotto-Tab L2 ---
+        const subTabsContainer = document.getElementById('approfondimenti');
+        if (subTabsContainer) {
+            const subTabs = subTabsContainer.querySelectorAll('.sub-tab-btn');
+            const subContents = subTabsContainer.querySelectorAll('.sub-tab-content');
+
+            subTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    subTabs.forEach(t => t.classList.remove('active'));
+                    subContents.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    const subTabId = tab.dataset.subtab;
+                    document.getElementById(subTabId).classList.add('active');
+                });
+            });
+        }
+        
+        // --- Gestione Zoom Immagini ---
+        const overlay = document.getElementById('modal-overlay');
+        function unzoom() {
+            document.querySelector('.card.zoomed')?.classList.remove('zoomed');
+            overlay.classList.add('hidden');
+        }
+        document.querySelectorAll('.zoomable').forEach(card => {
+            card.addEventListener('click', (event) => {
+                // Non zoomare se si clicca su un link, un bottone, o il canvas stesso
+                if (event.target.closest('a, button, .sub-tab-btn, canvas')) return;
+                
+                const isZoomed = card.classList.contains('zoomed');
+                unzoom(); // Resetta prima
+                if (!isZoomed) {
+                    card.classList.add('zoomed');
+                    overlay.classList.remove('hidden');
+                }
+            });
+        });
+        overlay.addEventListener('click', unzoom);
+
+        // --- Funzione di Navigazione Deep Dive ---
+        window.navigateToDeepDive = function(l1TabId, l2SubTabId) {
+            // Switch L1 Tab
+            const l1Tabs = document.querySelectorAll('#tabs .tab-btn');
+            const l1Contents = document.querySelectorAll('#tab-contents .tab-content');
+            l1Tabs.forEach(t => t.classList.remove('active'));
+            l1Contents.forEach(c => c.classList.remove('active'));
+            
+            const targetL1Tab = document.querySelector(`.tab-btn[data-tab="${l1TabId}"]`);
+            const targetL1Content = document.getElementById(l1TabId);
+            if (targetL1Tab) targetL1Tab.classList.add('active');
+            if (targetL1Content) targetL1Content.classList.add('active');
+
+            // Switch L2 Tab
+            const l2Tabs = targetL1Content.querySelectorAll('.sub-tab-btn');
+            const l2Contents = targetL1Content.querySelectorAll('.sub-tab-content');
+            l2Tabs.forEach(t => t.classList.remove('active'));
+            l2Contents.forEach(c => c.classList.remove('active'));
+
+            const targetL2Tab = targetL1Content.querySelector(`.sub-tab-btn[data-subtab="${l2SubTabId}"]`);
+            const targetL2Content = document.getElementById(l2SubTabId);
+            if (targetL2Tab) targetL2Tab.classList.add('active');
+            if (targetL2Content) targetL2Content.classList.add('active');
+
+            // Scroll to the deep dive section
+            setTimeout(() => {
+                 targetL2Content.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100); // Leggero ritardo per assicurare il rendering
+        }
+
+        // --- Inizializzazione Chart.js ---
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#94a3b8';
+        const commonOptions = { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { position: 'bottom', labels: { color: '#cbd5e1' } } 
+            }, 
+            scales: { 
+                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }, 
+                x: { grid: { display: false }, ticks: { color: '#94a3b8' } } 
+            } 
+        };
+
+        function createChart(canvasId, config) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            // Distruggi il vecchio grafico se esiste
+            if (chartInstances.has(canvas)) {
+                chartInstances.get(canvas).destroy();
+            }
+            const chart = new Chart(canvas, config);
+            chartInstances.set(canvas, chart);
+            return chart;
+        }
+
+        // --- GRAFICI L1: INVALIDITÀ CIVILE ---
+        createChart('prestazioniVigentiChart', {
+            type: 'bar',
+            data: {
+                labels: ['Indennità di Accompagnamento', 'Pensioni di Invalidità Civile'],
+                datasets: [
+                    { label: 'Femmine', data: [9916, 3155], backgroundColor: colors.pink, borderRadius: 5 },
+                    { label: 'Maschi', data: [5958, 2501], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: commonOptions
+        });
+        
+        createChart('liquidazioniTrendChart', {
+            type: 'line',
+            data: {
+                labels: ['2021', '2022', '2023', '2024'],
+                datasets: [{
+                    label: 'Totale Prestazioni Liquidate',
+                    data: [3906, 3526, 3596, 3540],
+                    borderColor: colors.teal,
+                    tension: 0.3,
+                    fill: false
+                }]
+            },
+            options: { ...commonOptions, plugins: { legend: { display: false } } }
+        });
+        
+        createChart('tempiDefinizioneChart', {
+            type: 'bar',
+            data: {
+                labels: ['Pesaro e Urbino', 'Regione Marche', 'Italia'],
+                datasets: [
+                    { label: 'Tempo Medio 2023 (gg)', data: [142, 118, 144], backgroundColor: 'rgba(192, 132, 252, 0.6)', borderRadius: 5 },
+                    { label: 'Tempo Medio 2024 (gg)', data: [162, 115, 140], backgroundColor: colors.purple, borderRadius: 5 }
+                ]
+            },
+            options: commonOptions
+        });
+
+        // --- GRAFICI L1: SOSTEGNO AL REDDITO ---
+        createChart('sostegnoRedditoChart', {
+            type: 'bar',
+            data: {
+                labels: ['2022', '2023', '2024'],
+                datasets: [
+                    { label: 'RdC/PdC', data: [2299, 942, 0], backgroundColor: colors.orange, borderRadius: 5 },
+                    { label: 'ADI', data: [0, 0, 1737], backgroundColor: colors.sky, borderRadius: 5 },
+                    { label: 'SFL', data: [0, 143, 185], backgroundColor: colors.teal, borderRadius: 5 }
+                ]
+            },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, x: { stacked: true }, y: { stacked: true } } }
+        });
+        
+        createChart('assegnoUnicoChart', {
+            type: 'bar',
+            data: {
+                labels: ['2023', '2024'],
+                datasets: [{ 
+                    label: 'Nuclei AU a domanda', 
+                    data: [37537, 38226], 
+                    backgroundColor: [colors.green, colors.teal], 
+                    borderRadius: 5 
+                }]
+            },
+            options: { ...commonOptions, plugins: { legend: { display: false } } }
+        });
+
+        createChart('rdcGenderChart', {
+            type: 'doughnut',
+            data: {
+                labels: ['Femmine', 'Maschi'],
+                datasets: [{
+                    data: [560, 382],
+                    backgroundColor: [colors.pink, colors.sky],
+                    borderColor: '#1e293b'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } }, tooltip: { callbacks: { label: (c) => `${c.label}: ${c.raw}` } } } }
+        });
+
+        // --- NUOVI GRAFICI L2: APPROFONDIMENTI ---
+
+        // L2: Inv. Civile: Liquidazioni
+        createChart('liquidazioniDetailChart', {
+            type: 'line',
+            data: {
+                labels: ['2021', '2022', '2023', '2024'],
+                datasets: [
+                    { label: 'Indennità (PU)', data: [3327, 2944, 2921, 2844], borderColor: colors.pink, tension: 0.3, fill: false },
+                    { label: 'Pensioni (PU)', data: [579, 582, 675, 696], borderColor: colors.sky, tension: 0.3, fill: false },
+                    { label: 'Indennità (Marche)', data: [13639, 13938, 13599, 14071], borderColor: colors.pink, borderDash: [5, 5], tension: 0.3, fill: false, hidden: true },
+                    { label: 'Pensioni (Marche)', data: [2292, 2449, 2673, 2934], borderColor: colors.sky, borderDash: [5, 5], tension: 0.3, fill: false, hidden: true }
+                ]
+            },
+            options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { mode: 'index', intersect: false } } }
+        });
+
+        // L2: Inv. Civile: Domande
+        createChart('domandeInvChart', {
+            type: 'bar',
+            data: {
+                labels: ['PU 2023', 'Marche 2023', 'PU 2024', 'Marche 2024'],
+                datasets: [
+                    { label: 'Domande Presentate', data: [15764, 73668, 16109, 74189], backgroundColor: colors.purple, borderRadius: 5 },
+                    { label: 'Domande Accolte', data: [15909, 75967, 14487, 73172], backgroundColor: colors.teal, borderRadius: 5 }
+                ]
+            },
+            options: commonOptions
+        });
+
+        // L2: Inv. Civile: Dettaglio Tempi
+        createChart('tempiDetailChart', {
+            type: 'bar',
+            data: {
+                labels: ['PU 2023', 'PU 2024', 'Marche 2023', 'Marche 2024', 'Italia 2023', 'Italia 2024'],
+                datasets: [
+                    { label: 'Fase Sanitaria (gg)', data: [123, 142, 99, 97, 123, 125], backgroundColor: colors.orange, borderRadius: 5 },
+                    { label: 'Fase Amministrativa (gg)', data: [19, 20, 19, 18, 21, 16], backgroundColor: colors.sky, borderRadius: 5 }
+                ]
+            },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, x: { stacked: true }, y: { stacked: true } } }
+        });
+
+        // L2: Sostegno: Assegno Unico
+        createChart('auDetailChart', {
+            type: 'bar',
+            data: {
+                labels: ['PU 2023', 'Marche 2023', 'PU 2024', 'Marche 2024'],
+                datasets: [
+                    { label: 'Nuclei AU a Domanda', data: [37537, 153879, 38226, 157226], backgroundColor: colors.green, borderRadius: 5 },
+                    { label: 'Nuclei AU a RdC', data: [764, 3938, 0, 0], backgroundColor: colors.orange, borderRadius: 5 }
+                ]
+            },
+             options: { ...commonOptions, scales: { ...commonOptions.scales, x: { stacked: true }, y: { stacked: true } } }
+        });
+
+        // L2: Sostegno: RdC Genere
+        createChart('rdcGenderDetailChart', {
+            type: 'bar',
+            data: {
+                labels: ['Donne (PU)', 'Uomini (PU)', 'Donne (Marche)', 'Uomini (Marche)'],
+                datasets: [
+                    { label: 'Domande Presentate (2023)', data: [1099, 716, 5514, 3655], backgroundColor: colors.purple, borderRadius: 5 },
+                    { label: 'Domande Accolte (2023)', data: [560, 382, 2893, 1937], backgroundColor: colors.pink, borderRadius: 5 }
+                ]
+            },
+            options: commonOptions
+        });
+        
+        // L2: Sostegno: Reddito Libertà
+        createChart('redditoLibertaChart', {
+            type: 'bar',
+            data: {
+                labels: ['2022', '2023', '2024'],
+                datasets: [
+                    { label: 'Domande Presentate', data: [19, 9, 8], backgroundColor: colors.teal, borderRadius: 5 },
+                    { label: 'Domande Accolte', data: [NaN, 0, 0], backgroundColor: colors.red, borderRadius: 5 } // NaN per il dato '*', 0 per '-'
+                ]
+            },
+            options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: (c) => (c.raw ? `${c.dataset.label}: ${c.raw}` : `${c.dataset.label}: Dato non disponibile/zero`) } } } }
+        });
+
+    });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relazioni con l'Utenza - Pesaro e Urbino</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        .chart-container {
+            position: relative;
+            height: 40vh;
+            width: 100%;
+        }
+
+        /* ----- Navigazione L1 ----- */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .tab-btn {
+            position: relative;
+            color: #94a3b8;
+            transition: color 0.2s ease-in-out;
+            padding-bottom: 8px;
+            font-size: 1.1rem; /* Aumentato per L1 */
+        }
+        .tab-btn:hover { color: #f8fafc; }
+        .tab-btn.active {
+            color: #4ade80; /* Colore accento Verde */
+            font-weight: 600;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background-color: #4ade80; /* Colore accento Verde */
+            border-radius: 2px;
+        }
+
+        /* ----- Navigazione L2 ----- */
+        .sub-tab-content { display: none; }
+        .sub-tab-content.active { display: block; }
+        
+        .sub-tab-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background-color: #334155; /* Grigio scuro per non attivo */
+            color: #cbd5e1;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+        .sub-tab-btn:hover {
+            background-color: #475569;
+        }
+        .sub-tab-btn.active {
+            background-color: #4ade80; /* Verde per attivo */
+            color: #0f172a; /* Testo scuro su bottone verde */
+            font-weight: 600;
+        }
+
+        .card {
+            background-color: #1e293b;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .zoomable { cursor: zoom-in; }
+        
+        #modal-overlay { 
+            transition: opacity 0.3s ease-in-out; 
+        }
+        
+        .card.zoomed {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 90vw;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+
+        /* Stile per i link di approfondimento */
+        .deep-dive-link {
+            color: #4ade80;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .deep-dive-link:hover {
+            color: #f8fafc;
+            background-color: #4ade80;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50"></div>
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white">Relazioni con l'Utenza</h1>
+            <p class="text-lg text-slate-400 mt-1">Provincia di Pesaro e Urbino (Dati 2023-2024)</p>
+        </header>
+
+        <!-- Schede KPI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Contatti Totali</h3>
+                <p class="text-4xl font-bold text-white mt-2">16.951</p>
+                <p class="text-sm text-slate-500 mt-1">Info I e II livello (2024)</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Pratiche da Cittadini</h3>
+                <p class="text-4xl font-bold text-white mt-2">39%</p>
+                <p class="text-sm text-slate-500 mt-1">Sul totale pratiche 2024</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Comunicazioni Digitali</h3>
+                <p class="text-4xl font-bold text-white mt-2">80.476</p>
+                <p class="text-sm text-slate-500 mt-1">Cassetto, COMBIPAT, PEC (2024)</p>
+            </div>
+             <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Canale Preferito</h3>
+                <p class="text-4xl font-bold text-sky-400 mt-2">Sportello</p>
+                <p class="text-sm text-slate-500 mt-1">Accesso in sede I livello</p>
+            </div>
+        </div>
+
+        <!-- Tab Buttons (L1) -->
+        <div id="tabs" class="flex flex-wrap justify-center gap-8 mb-6 border-b border-slate-700">
+            <button class="tab-btn active" data-tab="canali">Canali di Contatto</button>
+            <button class="tab-btn" data-tab="soggetti">Soggetti Richiedenti</button>
+            <button class="tab-btn" data-tab="trend">Trend e Benchmark</button> <!-- NUOVO TAB L1 -->
+        </div>
+
+        <!-- Tab Content (L1) -->
+        <div id="tab-contents" class="mt-8">
+            
+            <!-- Canali di Contatto -->
+            <div id="canali" class="tab-content active space-y-6">
+                <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Tipologia di Accesso all'Informazione (I Livello)</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>L'<strong class="text-sky-400">accesso in sede</strong> si conferma il canale principale, sebbene in calo rispetto al 2023.</li>
+                        <li>Il <strong class="text-teal-400">ricontatto telefonico</strong> rimane una modalità stabile e rilevante.</li>
+                        <li>L'utilizzo del <strong class="text-purple-400">web meeting</strong>, seppur minoritario, è in crescita.</li>
+                        <li><a href="#" class="deep-dive-link" data-l1-tab="trend" data-l2-tab="trend-accesso">Approfondisci i benchmark regionali</a> per questa analisi.</li>
+                    </ul>
+                    <div class="chart-container" style="height: 50vh;"><canvas id="infoLevel1Chart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Flussi Comunicazioni Digitali (2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>La <strong class="text-purple-400">PEC</strong> è il canale con i volumi più alti (19.9k in entrata).</li>
+                            <li>Il <strong class="text-sky-400">Cassetto Aziende</strong> (15.9k) e <strong class="text-teal-400">COMBIPAT</strong> (8.2k) seguono.</li>
+                            <li>Per tutti i canali, i messaggi <strong class="text-green-400">in entrata</strong> (verso l'Istituto) sono superiori a quelli <strong class="text-orange-400">in uscita</strong>.</li>
+                            <li><a href="#" class="deep-dive-link" data-l1-tab="trend" data-l2-tab="trend-digitali">Analizza i trend 2023-2024 e i benchmark</a>.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="digitalCommChart"></canvas></div>
+                    </div>
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Andamento Consulenze (I vs II Livello)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                             <li>Le richieste di <strong class="text-sky-400">informazione di I livello</strong> sono diminuite nel 2024 (13.9k).</li>
+                            <li>Al contrario, le <strong class="text-teal-400">consulenze specialistiche di II livello</strong> mostrano un trend in crescita (+12,2%).</li>
+                             <li><a href="#" class="deep-dive-link" data-l1-tab="trend" data-l2-tab="trend-accesso">Confronta con i dati regionali</a>.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="consultingTrendChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Soggetti Richiedenti -->
+            <div id="soggetti" class="tab-content space-y-6">
+                <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Pratiche per Canale di Presentazione (2024)</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>I <strong class="text-sky-400">Patronati</strong> si confermano il principale canale (61%), gestendo 58.722 pratiche.</li>
+                        <li>Le pratiche presentate dai <strong class="text-teal-400">Cittadini</strong> o in proattività (39%) sono 37.486.</li>
+                        <li>La ripartizione è stabile rispetto al 2023. <a href="#" class="deep-dive-link" data-l1-tab="trend" data-l2-tab="trend-soggetti">Vedi l'analisi regionale</a>.</li>
+                    </ul>
+                     <div class="chart-container"><canvas id="submissionChannelChart"></canvas></div>
+                </div>
+                <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Dettaglio Presentazione Pratiche per Argomento (2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                             <li>L'intermediazione del <strong class="text-sky-400">Patronato</strong> è quasi totale per <strong class="text-slate-100">Invalidità Civile</strong> (92,3%) e <strong class="text-slate-100">Pensioni</strong> (89,8%).</li>
+                            <li>Al contrario, per le <strong class="text-teal-400">Prestazioni a sostegno della famiglia</strong>, il canale <strong class="text-slate-100">Cittadino</strong> è nettamente prevalente (77,6%).</li>
+                             <li><a href="#" class="deep-dive-link" data-l1-tab="trend" data-l2-tab="trend-soggetti">Analizza il trend 2023-2024 per argomento</a>.</li>
+                        </ul>
+                        <div class="chart-container" style="height: 50vh;"><canvas id="submissionDetailChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- NUOVA SEZIONE L1: Trend e Benchmark -->
+            <div id="trend" class="tab-content space-y-6">
+                
+                <!-- Navigazione L2 (Sotto-tab) -->
+                <div class="sub-tabs flex flex-wrap justify-center gap-4 mb-8 border-b border-slate-700 pb-4">
+                    <button class="sub-tab-btn active" data-subtab="trend-accesso">Accesso Utenza</button>
+                    <button class="sub-tab-btn" data-subtab="trend-digitali">Canali Digitali</button>
+                    <button class="sub-tab-btn" data-subtab="trend-soggetti">Soggetti Richiedenti</button>
+                </div>
+
+                <!-- Contenuto Sotto-tab L2 -->
+                <div id="sub-tab-contents" class="mt-4">
+                    
+                    <!-- L2: Accesso Utenza -->
+                    <div id="trend-accesso" class="sub-tab-content active space-y-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Benchmark Accesso I Livello (2024)</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>La provincia di Pesaro e Urbino (PU) utilizza l'<strong class="text-sky-400">accesso in sede</strong> (62,1%) in misura minore rispetto alla media regionale (67,4%).</li>
+                                    <li>Al contrario, il <strong class="text-teal-400">ricontatto telefonico</strong> (37,4%) è più utilizzato a PU che nel resto delle Marche (32,2%).</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="benchmarkAccessoChart"></canvas></div>
+                            </div>
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Benchmark Consulenze (I vs II Livello) - 2024</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>In proporzione, Pesaro e Urbino richiede più <strong class="text-teal-400">consulenze di II livello</strong> (17,8% del totale contatti) rispetto alla media regionale (16,2%).</li>
+                                    <li>Questo indica una domanda di <strong class="text-white">servizi specialistici</strong> leggermente superiore alla media.</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="benchmarkConsulenzeChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- L2: Canali Digitali -->
+                    <div id="trend-digitali" class="sub-tab-content space-y-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                             <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Trend Canali Digitali (PU) - 2023 vs 2024</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>Tutti i canali digitali <strong class="text-green-400">in entrata</strong> sono in forte crescita: <strong class="text-sky-400">Cassetto Aziende</strong> (+27,7%), <strong class="text-teal-400">COMBIPAT</strong> (+12,6%) e <strong class="text-purple-400">PEC</strong> (+9,9%).</li>
+                                    <li>I flussi <strong class="text-orange-400">in uscita</strong> (dall'Istituto) sono più stabili, con una lieve crescita.</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="trendDigitaliChart"></canvas></div>
+                            </div>
+                            <div class="card zoomable">
+                                <h3 class="font-bold text-xl text-green-400 mb-4">Benchmark Canali Digitali (Entrata) - 2024</h3>
+                                <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                    <li>La provincia di PU pesa per il <strong class="text-white">27,3%</strong> sul <strong class="text-sky-400">Cassetto Aziende</strong> regionale.</li>
+                                    <li>Pesa per il <strong class="text-white">34,5%</strong> sulla <strong class="text-purple-400">PEC</strong> in entrata (come inviata all'istituto).</li>
+                                    <li>L'uso di <strong class="text-teal-400">COMBIPAT</strong> (15,8%) è invece più basso rispetto alla media regionale.</li>
+                                </ul>
+                                <div class="chart-container"><canvas id="benchmarkDigitaliChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- L2: Soggetti Richiedenti -->
+                    <div id="trend-soggetti" class="sub-tab-content space-y-6">
+                        <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-green-400 mb-4">Trend Presentazione Pratiche (PU) - 2023 vs 2024</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>La variazione più significativa è nelle <strong class="text-purple-400">Prestazioni a sostegno della famiglia</strong>: la quota presentata dai <strong class="text-teal-400">Cittadini</strong> è esplosa, passando dal 51% (2023) al 77,6% (2024).</li>
+                                <li>Anche per i <strong class="text-red-400">Ratei (maturati e non riscossi)</strong>, la quota Cittadino è aumentata (dal 20,7% al 36,9%).</li>
+                                <li>Per <strong class="text-sky-400">Pensioni</strong> e <strong class="text-pink-400">Invalidità Civile</strong>, il ruolo del Patronato resta dominante e stabile.</li>
+                            </ul>
+                            <div class="chart-container" style="height: 60vh;"><canvas id="trendSoggettiChart"></canvas></div>
+                        </div>
+                         <div class="card zoomable">
+                            <h3 class="font-bold text-xl text-green-400 mb-4">Benchmark % Canale Presentazione (PU vs Regione) - 2024</h3>
+                            <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                                <li>La ripartizione tra <strong class="text-sky-400">Patronato</strong> (61,0%) e <strong class="text-teal-400">Cittadino</strong> (39,0%) a Pesaro e Urbino è <strong class="text-white">perfettamente allineata</strong> alla media regionale (59,5% vs 40,5%).</li>
+                            </ul>
+                            <div class="chart-container" style="height: 30vh;"><canvas id="benchmarkSoggettiChart"></canvas></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chartInstances = new Map();
+        const colors = { 
+            orange: '#fb923c', 
+            sky: '#38bdf8', 
+            teal: '#2dd4bf', 
+            pink: '#f472b6', 
+            red: '#f87171', 
+            purple: '#c084fc', 
+            green: '#4ade80',
+            slate: '#94a3b8'
+        };
+
+        // --- GESTIONE TAB L1 ---
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => activateTab(tab.dataset.tab));
+        });
+
+        function activateTab(tabId) {
+            tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+            contents.forEach(c => c.classList.toggle('active', c.id === tabId));
+            window.dispatchEvent(new Event('resize')); // Forza resize per Chart.js
+        }
+
+        // --- GESTIONE SUB-TAB L2 ---
+        const subTabs = document.querySelectorAll('.sub-tab-btn');
+        const subContents = document.querySelectorAll('.sub-tab-content');
+        subTabs.forEach(tab => {
+            tab.addEventListener('click', () => activateSubTab(tab.dataset.subtab));
+        });
+
+        function activateSubTab(subTabId) {
+            subTabs.forEach(t => t.classList.toggle('active', t.dataset.subtab === subTabId));
+            subContents.forEach(c => c.classList.toggle('active', c.id === subTabId));
+            window.dispatchEvent(new Event('resize')); // Forza resize per Chart.js
+        }
+
+        // --- GESTIONE DEEP-DIVE LINK ---
+        document.querySelectorAll('.deep-dive-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const l1TabId = e.target.dataset.l1Tab;
+                const l2TabId = e.target.dataset.l2Tab;
+
+                activateTab(l1TabId);
+                activateSubTab(l2TabId);
+                
+                // Scroll alla sezione L2
+                const l2Element = document.getElementById(l2TabId);
+                if (l2Element) {
+                    l2Element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // --- GESTIONE ZOOM CARD ---
+        const overlay = document.getElementById('modal-overlay');
+        function unzoom() {
+            document.querySelector('.card.zoomed')?.classList.remove('zoomed');
+            overlay.classList.add('hidden');
+        }
+        document.querySelectorAll('.zoomable').forEach(card => {
+            card.addEventListener('click', (event) => {
+                if (event.target.closest('canvas, .deep-dive-link, button')) return;
+                const isZoomed = card.classList.contains('zoomed');
+                unzoom();
+                if (!isZoomed) {
+                    card.classList.add('zoomed');
+                    overlay.classList.remove('hidden');
+                }
+            });
+        });
+        overlay.addEventListener('click', unzoom);
+
+        // --- CONFIGURAZIONE CHART.JS ---
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#94a3b8';
+        const commonOptions = { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { position: 'bottom', labels: { color: '#cbd5e1' } } 
+            }, 
+            scales: { 
+                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }, 
+                x: { grid: { display: false }, ticks: { color: '#94a3b8' } } 
+            } 
+        };
+        const commonOptionsStacked = { ...commonOptions, scales: { x: {...commonOptions.scales.x, stacked: true }, y: {...commonOptions.scales.y, stacked: true } } };
+        const commonOptionsDoughnut = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' }}, tooltip: {callbacks: {label: (c) => `${c.label}: ${c.raw.toFixed(1)}%`}}}};
+
+        function createChart(canvasId, config) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const chart = new Chart(canvas, config);
+            chartInstances.set(canvas, chart);
+            return chart;
+        }
+
+        // --- GRAFICI L1 (CANALI DI CONTATTO) ---
+        createChart('infoLevel1Chart', {
+            type: 'bar',
+            data: {
+                labels: ['2023', '2024'],
+                datasets: [
+                    { label: 'Accesso in Sede', data: [11224, 8652], backgroundColor: colors.sky, borderRadius: 5 },
+                    { label: 'Ricontatto Telefonico', data: [5535, 5214], backgroundColor: colors.teal, borderRadius: 5 },
+                    { label: 'Web Meeting', data: [24, 63], backgroundColor: colors.purple, borderRadius: 5 }
+                ]
+            },
+            options: commonOptionsStacked
+        });
+        
+        createChart('digitalCommChart', {
+            type: 'bar',
+            data: {
+                labels: ['Cassetto Aziende', 'COMBIPAT', 'PEC'],
+                datasets: [
+                    { label: 'In Entrata', data: [15916, 8191, 19919], backgroundColor: colors.green, borderRadius: 5 },
+                    { label: 'In Uscita', data: [13834, 8206, 14410], backgroundColor: colors.orange, borderRadius: 5 }
+                ]
+            },
+            options: commonOptions
+        });
+        
+        createChart('consultingTrendChart', {
+            type: 'bar',
+            data: {
+                labels: ['2023', '2024'],
+                datasets: [
+                    { label: 'Informazione I Livello', data: [16783, 13929], backgroundColor: colors.sky, borderRadius: 5 },
+                    { label: 'Consulenza II Livello', data: [2694, 3022], backgroundColor: colors.teal, borderRadius: 5 }
+                ]
+            },
+            options: commonOptions
+        });
+
+        // --- GRAFICI L1 (SOGGETTI RICHIEDENTI) ---
+        createChart('submissionChannelChart', {
+            type: 'doughnut',
+            data: {
+                labels: ['Patronato', 'Cittadino'],
+                datasets: [{
+                    data: [61.0, 39.0],
+                    backgroundColor: [colors.sky, colors.teal],
+                    borderColor: '#1e293b'
+                }]
+            },
+            options: commonOptionsDoughnut
+        });
+
+        createChart('submissionDetailChart', {
+            type: 'bar',
+            data: {
+                labels: ['Pensioni', 'Inv. Civile', 'Assistenziali', 'Disoccupazione', 'Famiglia', 'Riscatti', 'Ricostituzioni', 'Ratei'],
+                datasets: [
+                    { label: 'Patronato', data: [9904, 4131, 2071, 14509, 3418, 406, 6161, 4632], backgroundColor: colors.sky, borderRadius: 5 },
+                    { label: 'Cittadino', data: [1126, 346, 571, 3521, 11840, 522, 4141, 2703], backgroundColor: colors.teal, borderRadius: 5 }
+                ]
+            },
+            options: commonOptionsStacked
+        });
+
+        // --- NUOVI GRAFICI L2 (TREND E BENCHMARK) ---
+
+        // L2: Accesso Utenza
+        createChart('benchmarkAccessoChart', {
+            type: 'bar',
+            data: {
+                labels: ['Accesso in Sede', 'Ricontatto Telefonico', 'Web Meeting'],
+                datasets: [
+                    { label: 'Pesaro e Urbino (%)', data: [62.1, 37.4, 0.5], backgroundColor: colors.green, borderRadius: 5 },
+                    { label: 'Regione Marche (%)', data: [67.4, 32.2, 0.4], backgroundColor: colors.slate, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.label}: ${c.raw.toFixed(1)}%` } } }}
+        });
+
+        createChart('benchmarkConsulenzeChart', {
+            type: 'bar',
+            data: {
+                labels: ['Pesaro e Urbino', 'Regione Marche'],
+                datasets: [
+                    { label: 'Informazione I Livello', data: [13929, 69234], backgroundColor: colors.sky, borderRadius: 5 },
+                    { label: 'Consulenza II Livello', data: [3022, 13300], backgroundColor: colors.teal, borderRadius: 5 }
+                ]
+            },
+            options: commonOptionsStacked
+        });
+
+        // L2: Canali Digitali
+        createChart('trendDigitaliChart', {
+            type: 'bar',
+            data: {
+                labels: ['Cassetto Aziende', 'COMBIPAT', 'PEC'],
+                datasets: [
+                    { label: 'Entrata 2023', data: [12465, 7277, 18125], backgroundColor: colors.green, stack: '2023' },
+                    { label: 'Uscita 2023', data: [13287, 8072, 12866], backgroundColor: colors.orange, stack: '2023' },
+                    { label: 'Entrata 2024', data: [15916, 8191, 19919], backgroundColor: colors.green, stack: '2024', borderColor: '#fff', borderWidth: 2, borderRadius: 5 },
+                    { label: 'Uscita 2024', data: [13834, 8206, 14410], backgroundColor: colors.orange, stack: '2024', borderColor: '#fff', borderWidth: 2, borderRadius: 5 }
+                ]
+            },
+             options: {...commonOptions, plugins: { legend: { labels: { filter: (l) => l.text.includes('2024') } } }} // Mostra solo legenda 2024
+        });
+
+        createChart('benchmarkDigitaliChart', {
+            type: 'bar',
+            data: {
+                labels: ['Cassetto Aziende', 'COMBIPAT', 'PEC'],
+                datasets: [
+                    { label: 'Pesaro e Urbino', data: [15916, 8191, 19919], backgroundColor: colors.green, borderRadius: 5 },
+                    { label: 'Resto Regione Marche', data: [58217-15916, 51931-8191, 107596-19919], backgroundColor: colors.slate, borderRadius: 5 }
+                ]
+            },
+            options: commonOptionsStacked
+        });
+        
+        // L2: Soggetti Richiedenti
+        createChart('trendSoggettiChart', {
+            type: 'bar',
+            data: {
+                labels: ['Pensioni', 'Inv. Civile', 'Assistenziali', 'Disoccupazione', 'Famiglia', 'Ratei'],
+                datasets: [
+                    { label: 'Patronato 2023', data: [9296, 4260, 641, 15375, 8975, 1723], backgroundColor: colors.sky, stack: '2023' },
+                    { label: 'Cittadino 2023', data: [988, 351, 197, 3155, 9341, 450], backgroundColor: colors.teal, stack: '2023' },
+                    { label: 'Patronato 2024', data: [9904, 4131, 2071, 14509, 3418, 4632], backgroundColor: colors.sky, stack: '2024', borderColor: '#fff', borderWidth: 2, borderRadius: 5 },
+                    { label: 'Cittadino 2024', data: [1126, 346, 571, 3521, 11840, 2703], backgroundColor: colors.teal, stack: '2024', borderColor: '#fff', borderWidth: 2, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptionsStacked, plugins: { legend: { labels: { filter: (l) => l.text.includes('2024') } } }}
+        });
+
+        createChart('benchmarkSoggettiChart', {
+            type: 'bar',
+            data: {
+                labels: ['Pesaro e Urbino', 'Regione Marche'],
+                datasets: [
+                    { label: 'Patronato', data: [61.0, 59.5], backgroundColor: colors.sky, borderRadius: 5 },
+                    { label: 'Cittadino', data: [39.0, 40.5], backgroundColor: colors.teal, borderRadius: 5 }
+                ]
+            },
+            options: {...commonOptionsStacked, plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: (c) => `${c.label}: ${c.raw.toFixed(1)}%` } } }}
+        });
+
+    });
+    </script>
+</body>
+</html>
+

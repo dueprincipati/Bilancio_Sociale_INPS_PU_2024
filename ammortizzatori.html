@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ammortizzatori Sociali - Pesaro e Urbino (L2)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        .chart-container {
+            position: relative;
+            height: 45vh; /* Aumentato per i grafici più complessi */
+            width: 100%;
+        }
+
+        .tab-content, .sub-tab-content { display: none; }
+        .tab-content.active, .sub-tab-content.active { display: block; }
+
+        /* Stile L1 Tab */
+        .tab-btn {
+            position: relative;
+            color: #94a3b8;
+            transition: color 0.2s ease-in-out;
+            padding-bottom: 8px;
+            font-weight: 500;
+        }
+        .tab-btn:hover { color: #f8fafc; }
+        .tab-btn.active {
+            color: #4ade80; /* Colore verde (come da richiesta) */
+            font-weight: 600;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background-color: #4ade80; /* Colore verde */
+            border-radius: 2px;
+        }
+
+        /* Stile L2 Sub-Tab */
+        .sub-tab-btn {
+            padding: 8px 16px;
+            border-radius: 0.5rem;
+            color: #94a3b8;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+            border: 1px solid #334155;
+            background-color: #1e293b;
+        }
+        .sub-tab-btn:hover {
+            background-color: #334155;
+            color: #f8fafc;
+        }
+        .sub-tab-btn.active {
+            background-color: #4ade80;
+            color: #022c22; /* Testo scuro per leggibilità sul verde */
+            font-weight: 700;
+            border-color: #4ade80;
+        }
+
+        .card {
+            background-color: #1e293b;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .zoomable { cursor: zoom-in; }
+        
+        #modal-overlay { transition: opacity 0.3s ease-in-out; }
+        
+        .card.zoomed {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 90vw;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+
+        .deep-dive-link {
+            color: #4ade80;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .deep-dive-link:hover {
+            color: #f8fafc;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50"></div>
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white">Ammortizzatori Sociali</h1>
+            <p class="text-lg text-slate-400 mt-1">Provincia di Pesaro e Urbino (Dati 2022-2024)</p>
+        </header>
+
+        <!-- Schede KPI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Domande NASpI</h3>
+                <p class="text-4xl font-bold text-white mt-2">16.395</p>
+                <p class="text-sm text-slate-500 mt-1">Dato aggiornato al 2024</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Beneficiari CIG</h3>
+                <p class="text-4xl font-bold text-white mt-2">9.352</p>
+                <p class="text-sm text-slate-500 mt-1">Dato aggiornato al 2024</p>
+            </div>
+            <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">NASpI accolte in 15gg</h3>
+                <p class="text-4xl font-bold text-green-400 mt-2">88,5%</p>
+                <p class="text-sm text-slate-500 mt-1">Performance 2024</p>
+            </div>
+             <div class="card zoomable">
+                <h3 class="text-slate-400 font-semibold text-md">Erogazione CIGO</h3>
+                <p class="text-4xl font-bold text-white mt-2">11 gg</p>
+                <p class="text-sm text-slate-500 mt-1">Tempo medio 2024</p>
+            </div>
+        </div>
+
+        <!-- Tab Buttons (L1) -->
+        <div id="tabs" class="flex flex-wrap justify-center gap-8 mb-6 border-b border-slate-700">
+            <button class="tab-btn active" data-tab="cessazione">Cessazione Rapporto</button>
+            <button class="tab-btn" data-tab="sospensione">Sospensione Rapporto</button>
+            <button class="tab-btn" data-tab="approfondimenti">Approfondimenti</button>
+        </div>
+
+        <!-- Tab Content (L1) -->
+        <div id="tab-contents" class="mt-8">
+            <!-- 1. Cessazione Rapporto -->
+            <div id="cessazione" class="tab-content active space-y-6">
+                <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">Domande NASpI Accolte per Genere (2022-2024)</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>Il numero totale di domande NASpI è in <strong class="text-slate-100">costante crescita</strong> negli ultimi tre anni (solo PU).</li>
+                        <li>Le domande presentate dalle <strong class="text-pink-400">donne</strong> sono costantemente superiori a quelle degli <strong class="text-sky-400">uomini</strong>.</li>
+                        <li><a class="deep-dive-link" data-l1-tab="approfondimenti" data-l2-tab="bench-naspi-genere">Approfondisci il benchmark territoriale (vs. Marche e Italia).</a></li>
+                    </ul>
+                    <div class="chart-container" style="height: 50vh;"><canvas id="naspiGenderChart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Beneficiari per Prestazione (2023 vs 2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>La <strong class="text-purple-400">NASpI</strong> è la prestazione principale, con un numero di beneficiari in aumento nel 2024.</li>
+                            <li>Seguono la <strong class="text-teal-400">Disoccupazione Agricola</strong> e la <strong class="text-orange-400">Dis-coll</strong>.</li>
+                            <li><a class="deep-dive-link" data-l1-tab="approfondimenti" data-l2-tab="bench-prov-cessazione">Approfondisci il benchmark provinciale.</a></li>
+                        </ul>
+                        <div class="chart-container"><canvas id="benefitsTypeChart"></canvas></div>
+                    </div>
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Tempi di Accoglimento NASpI (2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Performance eccellente a Pesaro e Urbino: l'<strong class="text-green-400">88,5%</strong> delle domande è accolto <strong class="text-green-400">entro 15 giorni</strong>.</li>
+                            <li>Il dato è superiore alla media regionale (85,6%) e nazionale (85,8%).</li>
+                            <li><a class="deep-dive-link" data-l1-tab="approfondimenti" data-l2-tab="dettaglio-tempi-naspi">Approfondisci il dettaglio e lo storico.</a></li>
+                        </ul>
+                        <div class="chart-container"><canvas id="naspiTimingChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 2. Sospensione Rapporto -->
+            <div id="sospensione" class="tab-content space-y-6">
+                <div class="card zoomable">
+                    <h3 class="font-bold text-xl text-slate-200 mb-4">CIG - Ore Autorizzate per Tipologia (2021-2024)</h3>
+                    <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                        <li>Drastico calo delle ore autorizzate dopo il picco del 2021 legato all'emergenza pandemica.</li>
+                        <li>Nel 2024, la <strong class="text-sky-400">CIGO</strong> e la <strong class="text-pink-400">CIGS</strong> sono le prestazioni più utilizzate.</li>
+                        <li>(Nessun approfondimento disponibile, i dati L1 sono completi).</li>
+                    </ul>
+                    <div class="chart-container" style="height: 50vh;"><canvas id="cigHoursChart"></canvas></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Beneficiari CIG (2023 vs 2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Numero totale di beneficiari in leggero aumento nel 2024.</li>
+                            <li>La <strong class="text-sky-400">CIGO</strong> è la prestazione con più beneficiari, seguita dalla <strong class="text-pink-400">CIGS</strong>.</li>
+                             <li><a class="deep-dive-link" data-l1-tab="approfondimenti" data-l2-tab="bench-prov-sospensione">Approfondisci il benchmark provinciale.</a></li>
+                        </ul>
+                        <div class="chart-container"><canvas id="cigBeneficiariesChart"></canvas></div>
+                    </div>
+                    <div class="card zoomable">
+                        <h3 class="font-bold text-xl text-slate-200 mb-4">Tempi Medi di Erogazione (2024)</h3>
+                         <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>I tempi per la <strong class="text-purple-400">CIGO</strong> a Pesaro (11 gg) sono in linea con la media regionale e molto più rapidi di quella nazionale.</li>
+                             <li>I tempi per i <strong class="text-teal-400">Fondi di Solidarietà (FIS)</strong> provinciali (52 gg) sono più lenti della media regionale ma più veloci di quella nazionale.</li>
+                             <li><a class="deep-dive-link" data-l1-tab="approfondimenti" data-l2-tab="trend-tempi-erogazione">Approfondisci il trend storico (2023 vs 2024).</a></li>
+                         </ul>
+                        <div class="chart-container"><canvas id="erogationTimingChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Approfondimenti (Nuova Sezione L2) -->
+            <div id="approfondimenti" class="tab-content space-y-6">
+                <!-- Navigazione L2 -->
+                <div id="sub-tabs-approfondimenti" class="flex flex-wrap justify-center gap-4 mb-6">
+                    <button class="sub-tab-btn active" data-sub-tab="bench-naspi-genere">Benchmark NASpI Genere</button>
+                    <button class="sub-tab-btn" data-sub-tab="bench-prov-cessazione">Benchmark Prov. Cessazione</button>
+                    <button class="sub-tab-btn" data-sub-tab="dettaglio-tempi-naspi">Dettaglio Tempi NASpI</button>
+                    <button class="sub-tab-btn" data-sub-tab="bench-prov-sospensione">Benchmark Prov. Sospensione</button>
+                    <button class="sub-tab-btn" data-sub-tab="trend-tempi-erogazione">Trend Tempi CIGO/FIS</button>
+                </div>
+
+                <!-- Contenuti L2 -->
+                <div id="sub-tab-contents-approfondimenti">
+                    
+                    <!-- L2.1: Benchmark NASpI Genere (Tav. 21) -->
+                    <div id="bench-naspi-genere" class="sub-tab-content active card zoomable">
+                        <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Benchmark Territoriale NASpI per Genere (2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Questo grafico confronta la composizione di genere dei beneficiari NASpI a <strong class="text-slate-100">Pesaro e Urbino</strong> con la <strong class="text-slate-100">Regione Marche</strong> e l'<strong class="text-slate-100">Italia</strong>.</li>
+                            <li>A livello nazionale (Italia), il numero di beneficiari <strong class="text-pink-400">femmine</strong> (1,20M) è significativamente superiore a quello dei <strong class="text-sky-400">maschi</strong> (1,06M).</li>
+                            <li>La provincia di Pesaro e Urbino mostra uno squilibrio simile, con 9.379 femmine contro 7.016 maschi.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="l2_naspiGenderBench"></canvas></div>
+                    </div>
+
+                    <!-- L2.2: Benchmark Provinciale Cessazione (Tav. 22) -->
+                    <div id="bench-prov-cessazione" class="sub-tab-content card zoomable">
+                        <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Benchmark Beneficiari Cessazione (Marche 2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Questo grafico scompone il totale dei beneficiari per cessazione di rapporto (NASpI, Dis. Agr., Dis-coll) nelle diverse province marchigiane.</li>
+                            <li><strong class="text-purple-400">Ancona</strong> è la provincia con il maggior numero di beneficiari (27.502).</li>
+                            <li><strong class="text-green-400">Pesaro e Urbino</strong> si posiziona seconda (21.492), seguita da <strong class="text-teal-400">Macerata</strong> (16.137).</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="l2_cessazioneBench"></canvas></div>
+                    </div>
+
+                    <!-- L2.3: Dettaglio Tempi NASpI (Tav. 23) -->
+                    <div id="dettaglio-tempi-naspi" class="sub-tab-content card zoomable">
+                        <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Dettaglio Tempi Accoglimento NASpI (2023 vs 2024)</h3>
+                         <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                             <li>Questo grafico mostra la scomposizione dettagliata dei tempi di accoglimento, confrontando il 2023 e il 2024 (Dati % - PU).</li>
+                             <li>Si nota un <strong class="text-green-400">miglioramento</strong> nelle fasce "Oltre 120 gg" (da 0,5% a 0,2%) e "91-120 gg" (da 0,2% a 0,2%).</li>
+                             <li>La performance <strong class="text-green-400">"Entro 15 gg"</strong> è leggermente calata (da 90,1% a 88,5%), a favore della fascia "15-30 gg" (da 6,3% a 7,6%), mantenendo comunque un'eccellente efficienza complessiva.</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="l2_naspiTimingDetail"></canvas></div>
+                    </div>
+
+                    <!-- L2.4: Benchmark Provinciale Sospensione (Tav. 25) -->
+                    <div id="bench-prov-sospensione" class="sub-tab-content card zoomable">
+                        <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Benchmark Beneficiari Sospensione (Marche 2024)</h3>
+                        <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Questo grafico scompone il totale dei beneficiari per sospensione di rapporto (CIGO, CIGS, Fondi) nelle diverse province marchigiane.</li>
+                            <li><strong class="text-purple-400">Ancona</strong> è la provincia con il maggior numero di beneficiari (12.155).</li>
+                            <li><strong class="text-green-400">Pesaro e Urbino</strong> si posiziona seconda (9.352), seguita da <strong class="text-teal-400">Macerata</strong> (6.323).</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="l2_sospensioneBench"></canvas></div>
+                    </div>
+
+                     <!-- L2.5: Trend Tempi Erogazione CIGO/FIS (Tav. 26/27) -->
+                    <div id="trend-tempi-erogazione" class="sub-tab-content card zoomable">
+                        <h3 class="font-bold text-xl text-green-400 mb-4">Approfondimento: Trend Tempi Erogazione CIGO/FIS (2023 vs 2024)</h3>
+                         <ul class="list-disc list-inside text-slate-400 space-y-2 mb-4">
+                            <li>Per la <strong class="text-purple-400">CIGO</strong>, i tempi medi a PU sono <strong class="text-green-400">drasticamente migliorati</strong>, passando da 17 a 11 giorni, performando meglio della media regionale (12 gg) e nazionale (21 gg).</li>
+                             <li>Per i <strong class="text-teal-400">Fondi di Solidarietà (FIS)</strong>, i tempi a PU sono <strong class="text-red-400">peggiorati</strong> (da 39 a 52 giorni), superando la media regionale (41 gg) ma rimanendo molto migliori di quella nazionale (78 gg).</li>
+                        </ul>
+                        <div class="chart-container"><canvas id="l2_timingTrend"></canvas></div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chartInstances = new Map();
+        const colors = { orange: '#fb923c', sky: '#38bdf8', teal: '#2dd4bf', pink: '#f472b6', red: '#f87171', purple: '#c084fc', green: '#4ade80' };
+
+        // --- Gestione L1 Tabs ---
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                activateL1Tab(tab.dataset.tab);
+            });
+        });
+
+        function activateL1Tab(tabId) {
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // --- Gestione L2 Sub-Tabs (Solo per Approfondimenti) ---
+        const subTabsContainer = document.getElementById('sub-tabs-approfondimenti');
+        if (subTabsContainer) {
+            const subTabs = subTabsContainer.querySelectorAll('.sub-tab-btn');
+            const subContents = document.getElementById('sub-tab-contents-approfondimenti').querySelectorAll('.sub-tab-content');
+
+            subTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    activateL2Tab(tab.dataset.subTab);
+                });
+            });
+
+            function activateL2Tab(subTabId) {
+                subTabs.forEach(t => t.classList.remove('active'));
+                subContents.forEach(c => c.classList.remove('active'));
+                const activeTab = subTabsContainer.querySelector(`.sub-tab-btn[data-sub-tab="${subTabId}"]`);
+                if (activeTab) {
+                    activeTab.classList.add('active');
+                }
+                const activeContent = document.getElementById(subTabId);
+                 if (activeContent) {
+                    activeContent.classList.add('active');
+                }
+            }
+            
+             // --- Gestione Deep Dive Links (L1 -> L2) ---
+            document.querySelectorAll('.deep-dive-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const l1TabId = link.dataset.l1Tab;
+                    const l2TabId = link.dataset.l2Tab;
+
+                    // 1. Attiva il Tab L1 corretto
+                    activateL1Tab(l1TabId);
+
+                    // 2. Attiva il Sub-Tab L2 corretto
+                    activateL2Tab(l2TabId);
+                    
+                    // 3. Scroll
+                    const l2Nav = document.getElementById('sub-tabs-approfondimenti');
+                    if (l2Nav) {
+                        l2Nav.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        }
+
+        // --- Gestione Zoom ---
+        const overlay = document.getElementById('modal-overlay');
+        function unzoom() {
+            document.querySelector('.card.zoomed')?.classList.remove('zoomed');
+            overlay.classList.add('hidden');
+        }
+        document.querySelectorAll('.zoomable').forEach(card => {
+            card.addEventListener('click', (event) => {
+                // Non attivare lo zoom se si clicca su un link, un bottone, o il canvas
+                if (event.target.closest('canvas, .deep-dive-link, .sub-tab-btn, a, button')) return;
+                
+                const isZoomed = card.classList.contains('zoomed');
+                unzoom();
+                if (!isZoomed) {
+                    card.classList.add('zoomed');
+                    overlay.classList.remove('hidden');
+                }
+            });
+        });
+        overlay.addEventListener('click', unzoom);
+
+        // --- Configurazione Grafici ---
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#94a3b8';
+        const commonOptions = { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { position: 'bottom', labels: { color: '#cbd5e1' } } 
+            }, 
+            scales: { 
+                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }, 
+                x: { grid: { display: false }, ticks: { color: '#94a3b8' } } 
+            } 
+        };
+
+        function createChart(canvasId, config) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            // Distruggi il vecchio grafico se esiste
+            if (chartInstances.has(canvasId)) {
+                chartInstances.get(canvasId).destroy();
+            }
+            const chart = new Chart(canvas, config);
+            chartInstances.set(canvasId, chart);
+            return chart;
+        }
+
+        // --- GRAFICI L1 (Esistenti) ---
+        const years = ['2022', '2023', '2024'];
+        
+        // 1. Cessazione
+        createChart('naspiGenderChart', {type: 'bar', data: { labels: years, datasets: [ { label: 'Femmine', data: [8934, 8900, 9379], backgroundColor: colors.pink, borderRadius: 5 }, { label: 'Maschi', data: [5806, 6367, 7016], backgroundColor: colors.sky, borderRadius: 5 } ] }, options: commonOptions });
+        createChart('benefitsTypeChart', {type: 'bar', data: { labels: ['2023', '2024'], datasets: [ { label: 'NASpI', data: [19543, 20464], backgroundColor: colors.purple, borderRadius: 5 }, { label: 'Disoccupazione Agricola', data: [937, 902], backgroundColor: colors.teal, borderRadius: 5 }, { label: 'Dis-coll', data: [110, 126], backgroundColor: colors.orange, borderRadius: 5 } ] }, options: { ...commonOptions, scales: { x: { ...commonOptions.scales.x }, y: { ...commonOptions.scales.y } } } });
+        createChart('naspiTimingChart', {type: 'doughnut', data: { labels: ['Entro 15 gg', 'Oltre 15 gg'], datasets: [{ data: [88.5, 11.5], backgroundColor: [colors.green, colors.red], borderColor: '#1e293b' }] }, options: {responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' }}, tooltip: {callbacks: {label: (c) => `${c.label}: ${c.raw}%`}}}}});
+
+        // 2. Sospensione
+        createChart('cigHoursChart', {type: 'line', data: { labels: ['2021', '2022', '2023', '2024'], datasets: [ { label: 'CIGO', data: [1233742, 365795, 720750, 681287], borderColor: colors.sky, tension: 0.3, fill: false }, { label: 'CIGS', data: [115336, 126111, 97009, 437841], borderColor: colors.pink, tension: 0.3, fill: false }, { label: 'Fondi Solidarietà', data: [1014495, 90184, 17793, 4034], borderColor: colors.green, tension: 0.3, fill: false } ] }, options: commonOptions });
+        createChart('cigBeneficiariesChart', {type: 'bar', data: { labels: ['2023', '2024'], datasets: [ { label: 'CIGO', data: [7694, 7293], backgroundColor: colors.sky, borderRadius: 5 }, { label: 'CIGS', data: [1025, 1987], backgroundColor: colors.pink, borderRadius: 5 }, { label: 'Fondi Solidarietà', data: [130, 72], backgroundColor: colors.green, borderRadius: 5 } ] }, options: commonOptions });
+        createChart('erogationTimingChart', { type: 'bar', data: { labels: ['Pesaro e Urbino', 'Regione Marche', 'Italia'], datasets: [ { label: 'CIGO (gg)', data: [11, 12, 21], backgroundColor: colors.purple, borderRadius: 5 }, { label: 'FIS (gg)', data: [52, 41, 78], backgroundColor: colors.teal, borderRadius: 5 } ] }, options: commonOptions });
+
+        // --- GRAFICI L2 (Nuovi) ---
+        
+        // L2.1: Benchmark NASpI Genere (Tav. 21)
+        createChart('l2_naspiGenderBench', {
+            type: 'bar', 
+            data: { 
+                labels: ['Pesaro e Urbino', 'Regione Marche', 'Italia'], 
+                datasets: [ 
+                    { label: 'Femmine', data: [9379, 35034, 1201697], backgroundColor: colors.pink, borderRadius: 5 }, 
+                    { label: 'Maschi', data: [7016, 28601, 1065515], backgroundColor: colors.sky, borderRadius: 5 }
+                ] 
+            }, 
+            options: commonOptions 
+        });
+        
+        // L2.2: Benchmark Provinciale Cessazione (Tav. 22)
+        createChart('l2_cessazioneBench', {
+            type: 'bar', 
+            data: { 
+                labels: ['Ancona', 'Pesaro e Urbino', 'Macerata', 'Ascoli Piceno', 'Fermo'], 
+                datasets: [ 
+                    { label: 'Totale Beneficiari Cessazione 2024', data: [27502, 21492, 16137, 12674, 9935], backgroundColor: [colors.purple, colors.green, colors.teal, colors.orange, colors.pink], borderRadius: 5 }
+                ] 
+            }, 
+            options: { ...commonOptions, plugins: { legend: { display: false } } } 
+        });
+
+        // L2.3: Dettaglio Tempi NASpI (Tav. 23)
+        createChart('l2_naspiTimingDetail', {
+            type: 'bar',
+            data: {
+                labels: ['Entro 15 gg', '15-30 gg', '31-45 gg', '46-60 gg', '61-90 gg', '91-120 gg', 'Oltre 120 gg'],
+                datasets: [
+                    { label: '2023 (%)', data: [90.1, 6.3, 1.6, 0.8, 0.6, 0.2, 0.5], backgroundColor: colors.sky, borderRadius: 5 },
+                    { label: '2024 (%)', data: [88.5, 7.6, 2.3, 0.6, 0.6, 0.2, 0.2], backgroundColor: colors.green, borderRadius: 5 }
+                ]
+            },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, ticks: { callback: (v) => v + '%' } } } }
+        });
+
+        // L2.4: Benchmark Provinciale Sospensione (Tav. 25)
+        createChart('l2_sospensioneBench', {
+            type: 'bar', 
+            data: { 
+                labels: ['Ancona', 'Pesaro e Urbino', 'Macerata', 'Fermo', 'Ascoli Piceno'], 
+                datasets: [ 
+                    { label: 'Totale Beneficiari Sospensione 2024', data: [12155, 9352, 6323, 4879, 2632], backgroundColor: [colors.purple, colors.green, colors.teal, colors.orange, colors.pink], borderRadius: 5 }
+                ] 
+            }, 
+            options: { ...commonOptions, plugins: { legend: { display: false } } } 
+        });
+
+        // L2.5: Trend Tempi Erogazione CIGO/FIS (Tav. 26/27)
+        createChart('l2_timingTrend', {
+            type: 'bar', 
+            data: { 
+                labels: ['CIGO PU', 'CIGO Regione', 'CIGO Italia', 'FIS PU', 'FIS Regione', 'FIS Italia'], 
+                datasets: [ 
+                    { label: '2023 (gg)', data: [17, 17, 33, 39, 52, 122], backgroundColor: colors.purple, borderRadius: 5 },
+                    { label: '2024 (gg)', data: [11, 12, 21, 52, 41, 78], backgroundColor: colors.teal, borderRadius: 5 }
+                ] 
+            }, 
+            options: commonOptions 
+        });
+
+    });
+    </script>
+</body>
+</html>
+

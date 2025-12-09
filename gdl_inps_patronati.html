@@ -188,6 +188,41 @@
             box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
         }
 
+        .btn-add {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 8px 20px;
+            font-size: 0.9em;
+            margin: 10px 5px;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(240, 147, 251, 0.4);
+        }
+
+        .btn-delete {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-left: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-delete:hover {
+            background: #ee5a6f;
+            transform: scale(1.1);
+        }
+
+        .table-controls {
+            margin: 15px 0;
+            text-align: right;
+        }
+
         .status-message {
             text-align: center;
             padding: 15px;
@@ -269,12 +304,17 @@
                 Sono stati clusterizzati in 4 macro-pilastri che guidano la risoluzione dei problemi.
             </div>
             
+            <div class="table-controls">
+                <button class="btn btn-add" onclick="addRowToPilastri()">➕ Aggiungi Pilastro</button>
+            </div>
+            
             <table id="tablePilastri">
                 <thead>
                     <tr>
                         <th>Pilastro</th>
                         <th>Valori Emersi (Clusterizzati)</th>
                         <th>Significato Operativo per il GdL</th>
+                        <th style="width: 80px;">Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -282,21 +322,25 @@
                         <td class="pilastro-col" contenteditable="true">EFFICACIA SOSTANZIALE</td>
                         <td contenteditable="true"><em>Concretezza, Sostanza, Adeguatezza, Specificità sul caso, Qualità > Velocità</em></td>
                         <td contenteditable="true">Rifiuto delle risposte formali ("copia-incolla") o interlocutorie. L'obiettivo è risolvere, non chiudere il ticket.</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="pilastro-col" contenteditable="true">ETICA RELAZIONALE</td>
                         <td contenteditable="true"><em>Rispetto, Lealtà, Empatia, Correttezza, Gentilezza</em></td>
                         <td contenteditable="true">Riconoscimento reciproco della dignità professionale. Firma delle risposte (metterci la faccia).</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="pilastro-col" contenteditable="true">RESPONSABILITÀ CONDIVISA</td>
                         <td contenteditable="true"><em>Collaborazione, Fare Rete, Mutuo supporto, Responsabilità, Equità</em></td>
                         <td contenteditable="true">Non è "noi contro loro". Se un ticket è mal posto o mal gestito, il problema è del sistema-rete.</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="pilastro-col" contenteditable="true">TRASPARENZA TECNICA</td>
                         <td contenteditable="true"><em>Chiarezza, Uniformità, Funzionalità, Trasparenza canali</em></td>
                         <td contenteditable="true">Procedure chiare, strumenti funzionanti, canali univoci (no "doppio binario" PEC/Combipat).</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -309,6 +353,10 @@
                 con identificazione dell'origine, del valore violato e dell'azione correttiva.
             </div>
             
+            <div class="table-controls">
+                <button class="btn btn-add" onclick="addRowToMatrice()">➕ Aggiungi Criticità</button>
+            </div>
+            
             <table id="tableMatrice">
                 <thead>
                     <tr>
@@ -318,6 +366,7 @@
                         <th>Origine Prevalente</th>
                         <th>Valore Violato</th>
                         <th>Obiettivo / Azione Netiquette</th>
+                        <th style="width: 80px;">Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -328,6 +377,7 @@
                         <td contenteditable="true">Condivisa</td>
                         <td contenteditable="true">Efficienza / Funzionalità</td>
                         <td contenteditable="true">Mappare i bug bloccanti da segnalare alla Direzione Centrale (DCSIT).</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="area-col" contenteditable="true">AREA A (TECNOLOGIA)</td>
@@ -336,6 +386,7 @@
                         <td contenteditable="true">Patronati</td>
                         <td contenteditable="true">Completezza Info</td>
                         <td contenteditable="true">Richiesta evolutiva: implementare ricerca profonda per CF e archivio storico accessibile.</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="area-col" contenteditable="true">AREA A (TECNOLOGIA)</td>
@@ -344,6 +395,7 @@
                         <td contenteditable="true">Patronati</td>
                         <td contenteditable="true">Trasparenza</td>
                         <td contenteditable="true">Usare stampa browser come workaround (da inserire in manuale utente condiviso).</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="area-col" contenteditable="true">AREA B (PROCESSO)</td>
@@ -352,6 +404,7 @@
                         <td contenteditable="true">Condivisa</td>
                         <td contenteditable="true">Uniformità / Unicità</td>
                         <td contenteditable="true">Regola aurea: Combipat è il canale unico prioritario. Definire tassativamente eccezioni (quando usare PEC).</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="area-col" contenteditable="true">AREA B (PROCESSO)</td>
@@ -360,6 +413,7 @@
                         <td contenteditable="true">Condivisa</td>
                         <td contenteditable="true">Efficienza / Velocità</td>
                         <td contenteditable="true">Mantenere l'unitarietà del thread (filo logico). Non chiudere il quesito se non risolto definitivamente.</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="area-col" contenteditable="true">AREA B (PROCESSO)</td>
@@ -368,6 +422,7 @@
                         <td contenteditable="true">INPS (verso Patr.)</td>
                         <td contenteditable="true">Appropriatezza</td>
                         <td contenteditable="true">Vademecum: Obbligo di indicare 'Prodotto - CF - Oggetto' e allegare tutto subito.</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="area-col" contenteditable="true">AREA B (PROCESSO)</td>
@@ -376,6 +431,7 @@
                         <td contenteditable="true">INPS (verso Patr.)</td>
                         <td contenteditable="true">Responsabilità</td>
                         <td contenteditable="true">Filtro preventivo dei Patronati: non chiedere ciò che è già scritto nelle circolari.</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="area-col" contenteditable="true">AREA C (COMUNICAZIONE)</td>
@@ -384,6 +440,7 @@
                         <td contenteditable="true">Patronati</td>
                         <td contenteditable="true">Specificità / Sostanza</td>
                         <td contenteditable="true">Divieto di burocratese: La risposta deve entrare nel merito del caso specifico, non citare solo la norma generale.</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="area-col" contenteditable="true">AREA C (COMUNICAZIONE)</td>
@@ -392,6 +449,7 @@
                         <td contenteditable="true">Condivisa</td>
                         <td contenteditable="true">Qualità</td>
                         <td contenteditable="true">Shift Culturale: Meglio un giorno in più ma una risposta risolutiva. (Da negoziare con i KPI di Direzione).</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="area-col" contenteditable="true">AREA C (COMUNICAZIONE)</td>
@@ -400,6 +458,7 @@
                         <td contenteditable="true">Patronati</td>
                         <td contenteditable="true">Lealtà / Rispetto</td>
                         <td contenteditable="true">Obbligo di firma: Ogni risposta deve avere un referente identificabile per favorire la responsabilità.</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="area-col" contenteditable="true">AREA C (COMUNICAZIONE)</td>
@@ -408,6 +467,7 @@
                         <td contenteditable="true">Condivisa</td>
                         <td contenteditable="true">Concretezza</td>
                         <td contenteditable="true">Se il caso è complesso (>3 scambi), obbligo di virare su Consulenza (Web meeting/telefono) immediata.</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -420,12 +480,17 @@
                 i risultati più significativi nel breve termine.
             </div>
             
+            <div class="table-controls">
+                <button class="btn btn-add" onclick="addRowToPriorita()">➕ Aggiungi Priorità</button>
+            </div>
+            
             <table id="tablePriorita">
                 <thead>
                     <tr>
                         <th>Priorità</th>
                         <th>Titolo Azione</th>
                         <th>Dettaglio Operativo</th>
+                        <th style="width: 80px;">Azioni</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -433,16 +498,19 @@
                         <td class="priorita-col" contenteditable="true">1</td>
                         <td contenteditable="true">Qualità della Risposta (La battaglia al 'Copia-Incolla')</td>
                         <td contenteditable="true">Definire cosa costituisce una 'risposta accettabile' (analisi del caso specifico vs citazione normativa).</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="priorita-col" contenteditable="true">2</td>
                         <td contenteditable="true">Filtro all'Ingresso (Responsabilità Patronati)</td>
                         <td contenteditable="true">Definire checklist obbligatoria prima di inviare un quesito (ho controllato circolare? ho messo protocollo? è il canale giusto?).</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                     <tr>
                         <td class="priorita-col" contenteditable="true">3</td>
                         <td contenteditable="true">Gestione dell'Eccezione (Consulenza)</td>
                         <td contenteditable="true">Creare un protocollo rapido per passare da Combipat a Meeting/Telefono quando la scrittura non basta, evitando il 'buco nero' delle richieste.</td>
+                        <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -600,6 +668,65 @@
                 saveData();
             }
         }, 30000);
+
+        // Funzioni per aggiungere righe
+        function addRowToPilastri() {
+            const table = document.getElementById('tablePilastri').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            
+            newRow.innerHTML = `
+                <td class="pilastro-col" contenteditable="true">NUOVO PILASTRO</td>
+                <td contenteditable="true"><em>Valori da definire</em></td>
+                <td contenteditable="true">Significato operativo da definire</td>
+                <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
+            `;
+            
+            newRow.cells[0].focus();
+            showMessage('➕ Nuova riga aggiunta. Clicca per modificare.', 'success');
+        }
+
+        function addRowToMatrice() {
+            const table = document.getElementById('tableMatrice').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            
+            newRow.innerHTML = `
+                <td class="area-col" contenteditable="true">AREA (TIPO)</td>
+                <td contenteditable="true">Nuova criticità</td>
+                <td contenteditable="true">Dettaglio da definire</td>
+                <td contenteditable="true">Origine</td>
+                <td contenteditable="true">Valore</td>
+                <td contenteditable="true">Azione da definire</td>
+                <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
+            `;
+            
+            newRow.cells[0].focus();
+            showMessage('➕ Nuova criticità aggiunta. Clicca per modificare.', 'success');
+        }
+
+        function addRowToPriorita() {
+            const table = document.getElementById('tablePriorita').getElementsByTagName('tbody')[0];
+            const rowCount = table.rows.length + 1;
+            const newRow = table.insertRow();
+            
+            newRow.innerHTML = `
+                <td class="priorita-col" contenteditable="true">${rowCount}</td>
+                <td contenteditable="true">Nuova priorità</td>
+                <td contenteditable="true">Dettaglio operativo da definire</td>
+                <td style="width: 80px; text-align: center;"><button class="btn-delete" onclick="deleteRow(this)">🗑️ Elimina</button></td>
+            `;
+            
+            newRow.cells[1].focus();
+            showMessage('➕ Nuova priorità aggiunta. Clicca per modificare.', 'success');
+        }
+
+        // Funzione per eliminare righe
+        function deleteRow(btn) {
+            if (confirm('Sei sicuro di voler eliminare questa riga?')) {
+                const row = btn.parentNode.parentNode;
+                row.parentNode.removeChild(row);
+                showMessage('🗑️ Riga eliminata.', 'success');
+            }
+        }
     </script>
 </body>
 </html>

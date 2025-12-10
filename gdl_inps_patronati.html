@@ -321,6 +321,7 @@
             <button class="btn btn-export" onclick="exportToExcel()">📊 Esporta in Excel</button>
             <button class="btn btn-export" onclick="downloadHTML()">📥 Scarica HTML</button>
             <button class="btn btn-reset" onclick="resetData()">🔄 Ripristina Originale</button>
+            <button class="btn btn-reset" onclick="clearLocalStorage()">🗑️ Cancella Cache</button>
         </div>
 
         <section>
@@ -663,8 +664,8 @@
         // Inizializzazione
         window.onload = function() {
             saveOriginalData();
-            loadSavedData();
-            attachEventListeners();
+            attachEventListeners(); // PRIMA attiviamo i listener
+            loadSavedData(); // POI carichiamo i dati (che non sovrascrivono i listener)
         };
 
         // Event delegation per i pulsanti (funziona anche dopo il caricamento da localStorage)
@@ -741,6 +742,17 @@
                 document.getElementById('tablePriorita').innerHTML = originalData.priorita;
                 localStorage.removeItem('gdl_data');
                 showMessage('🔄 Dati ripristinati allo stato originale', 'success');
+            }
+        }
+
+        // Cancella completamente il localStorage e ricarica
+        function clearLocalStorage() {
+            if (confirm('Vuoi cancellare tutti i dati salvati e ricaricare la pagina?')) {
+                localStorage.removeItem('gdl_data');
+                showMessage('🗑️ Cache cancellata! Ricarico la pagina...', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
             }
         }
 

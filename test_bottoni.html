@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bottoni</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background: #4a90e2;
+            color: white;
+        }
+        
+        .btn-move {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 2px;
+        }
+        
+        .btn-move:hover {
+            background: #357abd;
+        }
+        
+        .btn-delete {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn-delete:hover {
+            background: #ee5a6f;
+        }
+        
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Funzionamento Bottoni</h1>
+    <p><strong>Istruzioni:</strong> Clicca sui bottoni ↑ ↓ 🗑️ per testare. Apri la console (F12) per vedere i log.</p>
+    
+    <div id="message" class="message"></div>
+    
+    <button onclick="testReload()">🔄 Simula Reload da localStorage</button>
+    
+    <table id="testTable">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Valore</th>
+                <th style="width: 150px;">Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Riga 1</td>
+                <td>Valore A</td>
+                <td>
+                    <button class="btn-move" title="Sposta su">↑</button>
+                    <button class="btn-move" title="Sposta giù">↓</button>
+                    <button class="btn-delete" title="Elimina">🗑️</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Riga 2</td>
+                <td>Valore B</td>
+                <td>
+                    <button class="btn-move" title="Sposta su">↑</button>
+                    <button class="btn-move" title="Sposta giù">↓</button>
+                    <button class="btn-delete" title="Elimina">🗑️</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Riga 3</td>
+                <td>Valore C</td>
+                <td>
+                    <button class="btn-move" title="Sposta su">↑</button>
+                    <button class="btn-move" title="Sposta giù">↓</button>
+                    <button class="btn-delete" title="Elimina">🗑️</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <button onclick="addRow()">➕ Aggiungi Riga</button>
+    
+    <script>
+        // Event delegation - attivato al caricamento
+        window.onload = function() {
+            console.log('🚀 Pagina caricata');
+            attachEventListeners();
+        };
+        
+        function attachEventListeners() {
+            document.addEventListener('click', function(e) {
+                const target = e.target;
+                console.log('Click su:', target.tagName, target.className, target.textContent.trim());
+                
+                // Gestione pulsante sposta su
+                if (target.classList.contains('btn-move') && target.textContent.trim() === '↑') {
+                    e.preventDefault();
+                    console.log('Rilevato click su bottone SU');
+                    moveRowUp(target);
+                }
+                // Gestione pulsante sposta giù
+                else if (target.classList.contains('btn-move') && target.textContent.trim() === '↓') {
+                    e.preventDefault();
+                    console.log('Rilevato click su bottone GIÙ');
+                    moveRowDown(target);
+                }
+                // Gestione pulsante elimina
+                else if (target.classList.contains('btn-delete')) {
+                    e.preventDefault();
+                    console.log('Rilevato click su bottone ELIMINA');
+                    deleteRow(target);
+                }
+            });
+            
+            console.log('✅ Event listeners attivati');
+        }
+        
+        function moveRowUp(btn) {
+            console.log('📤 moveRowUp chiamata');
+            const row = btn.closest('tr');
+            const prevRow = row.previousElementSibling;
+            
+            if (prevRow) {
+                row.parentNode.insertBefore(row, prevRow);
+                showMessage('⬆️ Riga spostata verso l\'alto', 'success');
+            } else {
+                showMessage('⚠️ La riga è già in prima posizione', 'error');
+            }
+        }
+        
+        function moveRowDown(btn) {
+            console.log('📥 moveRowDown chiamata');
+            const row = btn.closest('tr');
+            const nextRow = row.nextElementSibling;
+            
+            if (nextRow) {
+                row.parentNode.insertBefore(nextRow, row);
+                showMessage('⬇️ Riga spostata verso il basso', 'success');
+            } else {
+                showMessage('⚠️ La riga è già in ultima posizione', 'error');
+            }
+        }
+        
+        function deleteRow(btn) {
+            console.log('🗑️ deleteRow chiamata');
+            const row = btn.closest('tr');
+            row.parentNode.removeChild(row);
+            showMessage('🗑️ Riga eliminata', 'success');
+        }
+        
+        function addRow() {
+            const table = document.getElementById('testTable').getElementsByTagName('tbody')[0];
+            const rowCount = table.rows.length + 1;
+            const newRow = table.insertRow();
+            
+            newRow.innerHTML = `
+                <td>Nuova Riga ${rowCount}</td>
+                <td>Valore Nuovo</td>
+                <td>
+                    <button class="btn-move" title="Sposta su">↑</button>
+                    <button class="btn-move" title="Sposta giù">↓</button>
+                    <button class="btn-delete" title="Elimina">🗑️</button>
+                </td>
+            `;
+            
+            showMessage('➕ Nuova riga aggiunta', 'success');
+        }
+        
+        function testReload() {
+            console.log('🔄 Simulazione reload da localStorage');
+            // Salva l'HTML della tabella
+            const tableHTML = document.getElementById('testTable').innerHTML;
+            localStorage.setItem('test_table', tableHTML);
+            
+            // Ricarica
+            document.getElementById('testTable').innerHTML = tableHTML;
+            
+            showMessage('🔄 Tabella ricaricata da localStorage simulato', 'success');
+            console.log('✅ Reload completato - i bottoni dovrebbero ancora funzionare');
+        }
+        
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+            msg.style.display = 'block';
+            
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

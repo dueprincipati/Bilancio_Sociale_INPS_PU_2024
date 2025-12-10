@@ -294,6 +294,7 @@
         <div class="btn-container">
             <button class="btn btn-save" onclick="saveData()">💾 Salva Modifiche</button>
             <button class="btn btn-export" onclick="exportToExcel()">📊 Esporta in Excel</button>
+            <button class="btn btn-export" onclick="downloadHTML()">📥 Scarica HTML</button>
             <button class="btn btn-reset" onclick="resetData()">🔄 Ripristina Originale</button>
         </div>
 
@@ -629,6 +630,30 @@
                 showMessage('📊 File CSV esportato con successo!', 'success');
             } catch (e) {
                 showMessage('❌ Errore nell\'esportazione: ' + e.message, 'error');
+            }
+        }
+
+        // Scarica il file HTML completo con le modifiche
+        function downloadHTML() {
+            try {
+                // Ottieni l'HTML completo della pagina
+                const htmlContent = document.documentElement.outerHTML;
+                
+                // Crea il blob e scarica
+                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'GdL_INPS_Patronati_Modificato_' + new Date().toISOString().split('T')[0] + '.html');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                showMessage('📥 File HTML scaricato con successo! Puoi condividerlo con altri.', 'success');
+            } catch (e) {
+                showMessage('❌ Errore nel download: ' + e.message, 'error');
             }
         }
 
